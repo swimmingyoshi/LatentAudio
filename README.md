@@ -52,8 +52,9 @@ LatentAudio features a modern PyQt6-based interface designed for deep sound scul
 
 ### 🗺️ Manifold Navigation
 #### Sound Map
+*   **The Sound Map**: A 2D projection of the entire latent space. Switch between **Data Mode** (visualizing your training set), **Model Mode** (cached coordinates), or **Synth Mode** (hallucinated exploration). 
 ![Sound Map :3](images/SOUNDMAP-Snap.png)
-*   **The Sound Map**: A 2D projection of the entire latent space. Switch between **Data Mode** (visualizing your training set), **Model Mode** (cached coordinates), or **Synth Mode** (hallucinated exploration). (VERY GOOD FOR THE MODEL'S UTILITY, prefer this mode over the sliders.)
+(VERY GOOD FOR THE MODEL'S UTILITY,I prefer this mode over the sliders.)
 
 ![Blend](images/snap-disabled.png)
 *   **Snap & Blend**: Enable "Snap" to jump to real training examples, (each point is a reconstructed piece from the dataset using the latents) or disable it to smoothly **Blend** between multiple neighboring sounds using Inverse Distance Weighting (creates new sounds by mixing the weights of nearby points).
