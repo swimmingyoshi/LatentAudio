@@ -16,8 +16,8 @@ LatentAudio is an advanced neural audio synthesis system that provides direct, h
 
 ### 2. Installation
 1. **Clone the repository**:
-    `git clone https://github.com/yourusername/LatentAudio.git`
-    `cd LatentAudio`
+```git clone https://github.com/yourusername/LatentAudio.git```
+```cd LatentAudio```
 
 2. Create a virtual environment:
    `python -m venv venv`
