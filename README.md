@@ -58,7 +58,7 @@ cd LatentAudio
     latent-train --help
     ```
 
-Download Trained 128D Kicks Model: [here](https://huggingface.co/Meowmeow42/LatentAudio/tree/main)
+**Download Trained 128D Kicks Model: [here](https://huggingface.co/Meowmeow42/LatentAudio/tree/main)**
 
 ## 🧠 Model Architecture: The Phase 7 Engine
 
