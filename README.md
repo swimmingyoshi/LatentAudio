@@ -2,6 +2,7 @@
 
 LatentAudio is an advanced neural audio synthesis system that provides direct, high-fidelity exploration of learned sound manifolds. Unlike traditional synthesisers, LatentAudio utilizes a sophisticated Variational Autoencoder (VAE) to learn a continuous latent space of sound, allowing for seamless morphing, exploratory walks, and semantic attribute manipulation.
 
+![GUI](images/GUI.png)
 
 **This project is a vibe coded variation of a previous passion project that used the same UI but was reworked to have a better network and nicer quality. Feel free to ask OpenCode `antigravity-gemini-3-flash` about it. it was one of the more helpful models i used for this. can give good training parameters, and help rework the codebase. BUT PLEASE REMEMBER TO BACK UP BEFORE GIVING IT FULL CONTROL FOR OBVIOUS REASONS. Feel free to fork, make changes and fix any code mistakes. this is just so others can play with and learn.**
 
