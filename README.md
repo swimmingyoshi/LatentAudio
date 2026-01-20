@@ -31,23 +31,31 @@ cd LatentAudio
    ```bash
    python -m venv venv
    ```
-   
+
    ```bash
    .\venv\Scripts\activate
    ```
 
 3. Install PyTorch (CUDA Support):
    Visit pytorch.org (https://pytorch.org/get-started/locally/) to find the correct command for your CUDA version. For CUDA 11.8:
-      `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
+      ```bash
+      pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+      ```
    
 4. Install LatentAudio:
-    `pip install -e .`
+    ```bash
+    pip install -e .
+    ```
 
 3. Usage
 - Launch the Explorer GUI:
-    `latent-ui`
+    ```bash
+    latent-ui
+    ```
 - Start Training via CLI:
-    `latent-train --help`
+    ```bash
+    latent-train --help
+    ```
 
 
 ## 🧠 Model Architecture: The Phase 7 Engine
