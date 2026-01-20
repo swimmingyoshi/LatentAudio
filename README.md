@@ -58,12 +58,12 @@ cd LatentAudio
     latent-train --help
     ```
 
+Trained 128D Model: [here](https://huggingface.co/Meowmeow42/LatentAudio/tree/main)
 
 ## 🧠 Model Architecture: The Phase 7 Engine
 
 The core of LatentAudio is a **1D Convolutional U-Net VAE**, specifically engineered for high-sample-rate audio generation (44.1kHz).
 
-Trained 128D Model: [here](https://huggingface.co/Meowmeow42/LatentAudio/tree/main)
 
 ### 1. 1D Convolutional U-Net Backbone
 The model uses a symmetric architecture with deep 1D convolutional layers and **ResBlock1d** modules. This allows the network to capture both micro-temporal textures and long-form structural characteristics of audio.
