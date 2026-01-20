@@ -60,22 +60,24 @@ LatentAudio features a modern PyQt6-based interface designed for deep sound scul
 *   **Snap & Blend**: Enable "Snap" to jump to real training examples, (each point is a reconstructed piece from the dataset using the latents) or disable it to smoothly **Blend** between multiple neighboring sounds using Inverse Distance Weighting (creates new sounds by mixing the weights of nearby points).
 *   **Zoom & PAN**: Lets you zoom in with scroll wheel and pan with mouse. double click to reset map. (makes it easier to explore the sound map and get in between dots for unique sounds.)
 
+
 #### Sliders
-![Sliders](images/Sliders.png)
 *   **Latent Sliders**: Direct, low-level access to all 128 dimensions of the neural network for precise sonic surgery. (kinda of confusing to use and not my favorite, but its useful for precision)
+![Sliders](images/Sliders.png)
 *   **Random**: Places sliders randomly, based on temp settings.
 *   **Zero**: Zeros out the sliders.
 *   **Generate Sound**: Creates the soundwave using the current slider settings. (could honestly be removed if we just update waves in realtime since model processes extremely fast in realtime)
 *   **Play**: Self explanatory, plays the currently shown audiowave.
 *   **Generate Random**: Randomizes sliders based on temp, creates soundwave and plays the sound. (used to make random exploration not so tedious)
 
+
 ### 🧪 Exploration Tools
-![Latent Variations](images/Variations.png)
-![Morph](images/Morph.png)
 
 *   **Smooth Morphing**: Create seamless transitions between two latent points using **Linear** or **Spherical (SLERP)** interpolation.
+![Morph](images/Morph.png)
 *   **Exploratory Walks**: Generate sequences of sounds using **Momentum-based Random Walks** that stay within the learned distribution while finding novel textures.
 *   **Latent Variations**: Instantly generate a "neighborhood" of sounds similar to your current selection to find the perfect version of a texture.
+![Latent Variations](images/Variations.png)
 *   **Attribute Manipulation**: Tweak high-level characteristics like **Brightness**, **Noisiness**, and **Loudness** through axes mathematically mapped to the latent space. (sample 1A is Loud *positive*, Sample 1B is quiet *negative*, NamedAttribute now moves the sliders up or down based on what it thinks controls loudness)
 
 ### 🔬 Analysis & Training
