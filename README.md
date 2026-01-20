@@ -7,6 +7,36 @@ LatentAudio is an advanced neural audio synthesis system that provides direct, h
 
 **Side Note: There is a Vae and a Simple Vae in the code files. the code is currently configured to use the SimpleVae as thats the one we rewrote to work... not sure if normal Unet Vae even works anymore have yet to test it. Focus was on simple Vae and Vram memory efficiency.**
 
+## 🚀 Getting Started
+### 1. Prerequisites
+- **Python 3.10+**
+- **NVIDIA GPU** (8GB+ VRAM recommended for training)
+- **FFmpeg**: Required for audio loading. 
+- *Windows*: `choco install ffmpeg` or download from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/).
+
+### 2. Installation
+1. **Clone the repository**:
+    `git clone https://github.com/yourusername/LatentAudio.git`
+    `cd LatentAudio`
+
+2. Create a virtual environment:
+   `python -m venv venv`
+   `.\venv\Scripts\activate`
+
+3. Install PyTorch (CUDA Support):
+   Visit pytorch.org (https://pytorch.org/get-started/locally/) to find the correct command for your CUDA version. For CUDA 11.8:
+      `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
+   
+4. Install LatentAudio:
+    `pip install -e .`
+
+3. Usage
+- Launch the Explorer GUI:
+    `latent-ui`
+- Start Training via CLI:
+    `latent-train --help`
+
+
 ## 🧠 Model Architecture: The Phase 7 Engine
 
 The core of LatentAudio is a **1D Convolutional U-Net VAE**, specifically engineered for high-sample-rate audio generation (44.1kHz).
