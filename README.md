@@ -135,7 +135,7 @@ LatentAudio features a modern PyQt6-based interface designed for deep sound scul
 
 ### 🔬 Analysis & Training
 *   **Neural Reconstruction**: Drag-and-drop any external audio file into the **Recon Tab** to see how the VAE perceives and re-synthesizes it. (really only useful to see how your training data is reconstructed, after training. and quickly setting your latent spaces to that point. can use random audios but its just weird noise lol)
-*   **Integrated Training Suite**: Configure and launch training sessions directly from the UI. Features real-time loss tracking and one-click **TensorBoard** integration. (Actually tensorboard kinda broken, i should fix it.. tries to launch but fails.. you should launch normally in terminal with after it fails, training starts normally regardless.)
+*   **Integrated Training Suite**: Configure and launch training sessions directly from the UI. Features real-time loss tracking and one-click **TensorBoard** integration. (Actually tensorboard kinda broken, i should fix it.. tries to launch but fails.. you should launch normally in terminal after it fails, training starts normally regardless.)
 *   **Smart VRAM Management**: Use the **Unload** feature to offload heavy neural weights from your GPU to system RAM, keeping the application responsive while you work in other software. (i really just wanted it to clear the cached model. but i guess this is helpful????? probably will fix later lol)
 
 ## 📂 Repository Structure
