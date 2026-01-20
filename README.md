@@ -12,16 +12,29 @@ LatentAudio is an advanced neural audio synthesis system that provides direct, h
 - **Python 3.10+**
 - **NVIDIA GPU** (8GB+ VRAM recommended for training)
 - **FFmpeg**: Required for audio loading. 
-- *Windows*: `choco install ffmpeg` or download from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/).
+- *Windows*: 
+```bash
+choco install ffmpeg
+```
+or download from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/).
 
 ### 2. Installation
 1. **Clone the repository**:
-```git clone https://github.com/yourusername/LatentAudio.git```
-```cd LatentAudio```
+```bash
+git clone https://github.com/yourusername/LatentAudio.git
+```
+```bash
+cd LatentAudio
+```
 
 2. Create a virtual environment:
-   `python -m venv venv`
-   `.\venv\Scripts\activate`
+   ```bash
+   python -m venv venv
+   ```
+   
+   ```bash
+   .\venv\Scripts\activate
+   ```
 
 3. Install PyTorch (CUDA Support):
    Visit pytorch.org (https://pytorch.org/get-started/locally/) to find the correct command for your CUDA version. For CUDA 11.8:
