@@ -1,10 +1,37 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # app.py - Main LatentAudio application window
 """Main application window for LatentAudio exploration."""
 
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTabWidget,
-    QFileDialog, QMessageBox, QPushButton, QLabel, QProgressDialog,
-    QStackedWidget, QCheckBox
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QSplitter,
+    QTabWidget,
+    QFileDialog,
+    QMessageBox,
+    QPushButton,
+    QLabel,
+    QProgressDialog,
+    QStackedWidget,
+    QCheckBox,
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QThread, QObject
 
@@ -13,15 +40,22 @@ from ..logging import logger
 from ..core.generator import AdvancedAudioGenerator
 from ..types import GeneratorConfig
 from .widgets import (
-    WaveformVisualizer, LatentVectorWidget,
-    GenerationControls, PlaybackControls, StatusWidget,
-    SoundMapWidget
+    WaveformVisualizer,
+    LatentVectorWidget,
+    GenerationControls,
+    PlaybackControls,
+    StatusWidget,
+    SoundMapWidget,
 )
 from .tabs import PresetManager, MorphTab, WalkTab, ReconstructionTab, VariationsTab, AttributesTab
 from .dialogs import TrainingDialog
 from .theme import (
-    WINDOW_TITLE, WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT,
-    DEFAULT_SPLITTER_SIZES, TITLE_FONT, BUTTON_STYLE
+    WINDOW_TITLE,
+    WINDOW_MIN_WIDTH,
+    WINDOW_MIN_HEIGHT,
+    DEFAULT_SPLITTER_SIZES,
+    TITLE_FONT,
+    BUTTON_STYLE,
 )
 
 
@@ -64,10 +98,11 @@ class TrainingWorker(QObject):
 
                 if metrics:
                     self.epoch_completed.emit(
-                        epoch, loss,
-                        metrics.get('reconstruction_loss', 0),
-                        metrics.get('kl_loss', 0),
-                        metrics.get('learning_rate', 0)
+                        epoch,
+                        loss,
+                        metrics.get("reconstruction_loss", 0),
+                        metrics.get("kl_loss", 0),
+                        metrics.get("learning_rate", 0),
                     )
 
                 if original_callback:
@@ -93,20 +128,23 @@ class TrainingWorker(QObject):
             if "cancelled" in error_msg.lower():
                 self.training_finished.emit(True, "Training stopped by user (model preserved)")
             elif "out of memory" in error_msg.lower():
-                self.training_finished.emit(False, f"GPU Out of Memory Error.\n\nTry reducing the Batch Size (e.g., to 8 or 4).\n\nDetails: {error_msg}")
+                self.training_finished.emit(
+                    False,
+                    f"GPU Out of Memory Error.\n\nTry reducing the Batch Size (e.g., to 8 or 4).\n\nDetails: {error_msg}",
+                )
             else:
                 self.training_finished.emit(False, f"Training error: {error_msg}")
 
         except Exception as e:
             error_msg = str(e)
-            print(f"Training failed details: {error_msg}") # Print to console
+            print(f"Training failed details: {error_msg}")  # Print to console
 
             # Attempt to preserve state on crash
-            if hasattr(self.generator, '_total_epochs_trained'):
+            if hasattr(self.generator, "_total_epochs_trained"):
                 self.generator._total_epochs_trained = self.generator._total_epochs_trained
-            if hasattr(self.generator, '_best_loss'):
+            if hasattr(self.generator, "_best_loss"):
                 self.generator._best_loss = self.generator._best_loss
-            if hasattr(self.generator, '_training_history'):
+            if hasattr(self.generator, "_training_history"):
                 self.generator._training_history = self.generator._training_history
 
             self.training_finished.emit(False, f"Training failed: {error_msg}")
@@ -138,13 +176,12 @@ class LatentExplorerApp(QWidget):
             config = GeneratorConfig()
             self.generator = AdvancedAudioGenerator(config)
             # Update UI to reflect generator's latent dimension
-            self.latent_widget = LatentVectorWidget(
-                latent_dim=self.generator.config.latent_dim
-            )
+            self.latent_widget = LatentVectorWidget(latent_dim=self.generator.config.latent_dim)
             self.generation_controls = GenerationControls()
         except Exception as e:
-            QMessageBox.critical(self, "Initialization Error",
-                               f"Failed to initialize generator: {e}")
+            QMessageBox.critical(
+                self, "Initialization Error", f"Failed to initialize generator: {e}"
+            )
             self.generator = None
 
     def setup_ui(self):
@@ -199,7 +236,7 @@ class LatentExplorerApp(QWidget):
         # View Switcher
         switch_layout = QHBoxLayout()
         self.view_stack = QStackedWidget()
-        
+
         self.toggle_view_btn = QPushButton("🗺️ Switch to Sound Map")
         self.toggle_view_btn.clicked.connect(self.toggle_latent_view)
         self.toggle_view_btn.setStyleSheet(BUTTON_STYLE)
@@ -233,9 +270,11 @@ class LatentExplorerApp(QWidget):
         self.reset_map_btn.setStyleSheet(BUTTON_STYLE)
         self.reset_map_btn.setVisible(False)
         switch_layout.addWidget(self.reset_map_btn)
-        
+
         self.snap_check = QCheckBox("Snap")
-        self.snap_check.setToolTip("Snap to nearest real point (checked) or blend between points (unchecked)")
+        self.snap_check.setToolTip(
+            "Snap to nearest real point (checked) or blend between points (unchecked)"
+        )
         self.snap_check.setChecked(True)
         self.snap_check.setVisible(False)
         self.snap_check.setStyleSheet("color: #ccc; font-size: 10px;")
@@ -247,7 +286,7 @@ class LatentExplorerApp(QWidget):
         self.latent_widget = LatentVectorWidget(
             latent_dim=self.generator.config.latent_dim if self.generator else 128
         )
-        
+
         self.view_stack.addWidget(self.latent_widget)
         self.view_stack.addWidget(self.sound_map)
         layout.addWidget(self.view_stack)
@@ -277,14 +316,14 @@ class LatentExplorerApp(QWidget):
         if current == 0:
             self.view_stack.setCurrentIndex(1)
             self.toggle_view_btn.setText("🎚️ Sliders")
-            
+
             # Show map controls
             self.map_data_btn.setVisible(True)
             self.map_model_btn.setVisible(True)
             self.synth_map_btn.setVisible(True)
             self.reset_map_btn.setVisible(True)
             self.snap_check.setVisible(True)
-            
+
             # Update button enabled states
             self.update_map_button_states()
         else:
@@ -295,7 +334,6 @@ class LatentExplorerApp(QWidget):
             self.synth_map_btn.setVisible(False)
             self.reset_map_btn.setVisible(False)
             self.snap_check.setVisible(False)
-
 
     def update_map_button_states(self):
         """Enable/disable map buttons based on availability."""
@@ -309,13 +347,13 @@ class LatentExplorerApp(QWidget):
         """Handle clicks on the sound map."""
         if not self.generator or not self.generator.model:
             return
-            
+
         if self.sound_map.points.size == 0 or self._latent_samples is None:
             return
-            
+
         # Calculate distances to all points
         dists = np.linalg.norm(self.sound_map.points - coords, axis=1)
-        
+
         if self.snap_check.isChecked():
             # SNAP MODE: Nearest neighbor
             idx = np.argmin(dists)
@@ -327,15 +365,15 @@ class LatentExplorerApp(QWidget):
             near_indices = np.argsort(dists)[:K]
             near_dists = dists[near_indices]
             near_vectors = self._latent_samples[near_indices]
-            
+
             # Calculate weights (inverse distance squared)
             epsilon = 1e-6
             weights = 1.0 / (near_dists**2 + epsilon)
             weights /= np.sum(weights)
-            
+
             # Compute weighted average
             vector = np.sum(near_vectors * weights[:, np.newaxis], axis=0)
-        
+
         self.latent_widget.set_vector(vector)
         self.generate_audio()
 
@@ -357,10 +395,10 @@ class LatentExplorerApp(QWidget):
             for s in self.samples:
                 z = self.generator.encode_audio(s)
                 latent_list.append(z)
-            
+
             self._latent_samples = np.array(latent_list)
             self.generator.cached_latents = self._latent_samples
-            
+
             self.generator.fit_projector(self._latent_samples)
             points_2d = self.generator.project_to_2d(self._latent_samples)
             self.sound_map.set_points(points_2d)
@@ -390,28 +428,28 @@ class LatentExplorerApp(QWidget):
         """Generate a map by hallucinating random points from the model."""
         if not self.generator or not self.generator.model:
             return
-            
+
         try:
             self.status_widget.set_status(f"Generating synthetic map ({n_points} points)...")
             self.generator.model.eval()
-            
+
             # Generate random latent vectors
             import torch
+
             with torch.no_grad():
                 # Use getattr to avoid LSP warning on custom model method
-                sample_func = getattr(self.generator.model, 'sample_latent')
+                sample_func = getattr(self.generator.model, "sample_latent")
                 z_tensor = sample_func(n_points, str(self.generator.device))
                 self._latent_samples = z_tensor.cpu().numpy()
-            
+
             self.generator.fit_projector(self._latent_samples)
             points_2d = self.generator.project_to_2d(self._latent_samples)
             self.sound_map.set_points(points_2d)
             self.status_widget.set_status("Synthetic sound map generated")
-            
+
         except Exception as e:
             logger.error(f"Failed to generate synthetic map: {e}")
             self.status_widget.set_error_status(f"Synthetic map error: {e}")
-
 
     def create_right_panel(self):
         """Create the right tab panel."""
@@ -557,6 +595,7 @@ class LatentExplorerApp(QWidget):
         if self.current_audio is not None:
             try:
                 import sounddevice as sd
+
                 sd.play(self.current_audio, self.generator.config.sample_rate)
                 self.status_widget.set_status("▶ Playing...")
             except ImportError:
@@ -593,7 +632,7 @@ class LatentExplorerApp(QWidget):
 
             self.samples = self.generator.load_dataset(folder, recursive=True)
             success_msg = f"Loaded {len(self.samples)} training samples"
-            
+
             self.update_map_button_states()
             QMessageBox.information(self, "Success", success_msg)
             self.status_widget.set_status(success_msg)
@@ -619,23 +658,23 @@ class LatentExplorerApp(QWidget):
         # Check if there's a loaded training state that can be resumed
         resume_from = None
         total_trained = 0
-        
+
         # Determine potential resume state
         state_candidate = None
-        
+
         # Priority 1: Current generator state (check first to see if it has history)
         gen_state = self.generator.get_training_state()
-        if gen_state.get('can_resume', False):
+        if gen_state.get("can_resume", False):
             state_candidate = gen_state
-            
+
         # Priority 2: Explicitly loaded state (fallback)
-        elif hasattr(self, '_loaded_training_state') and self._loaded_training_state:
+        elif hasattr(self, "_loaded_training_state") and self._loaded_training_state:
             state_candidate = self._loaded_training_state
 
-        if state_candidate and state_candidate.get('can_resume', False):
-            total_trained = state_candidate.get('total_epochs_trained', 0)
-            best_loss = state_candidate.get('best_loss', float('inf'))
-            
+        if state_candidate and state_candidate.get("can_resume", False):
+            total_trained = state_candidate.get("total_epochs_trained", 0)
+            best_loss = state_candidate.get("best_loss", float("inf"))
+
             # Simplified more helpful message
             msg = (
                 f"Previous training found: {total_trained} epochs completed.\n"
@@ -643,11 +682,13 @@ class LatentExplorerApp(QWidget):
                 f"Continue training from epoch {total_trained + 1}?\n\n"
                 f"Click 'Yes' to resume or 'No' to start over."
             )
-            
+
             reply = QMessageBox.question(
-                self, "Resume Training?", msg,
+                self,
+                "Resume Training?",
+                msg,
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.Yes
+                QMessageBox.StandardButton.Yes,
             )
             if reply == QMessageBox.StandardButton.Yes:
                 resume_from = state_candidate
@@ -657,14 +698,14 @@ class LatentExplorerApp(QWidget):
 
         # DEBUG: Log beta KL value right after dialog creation
         try:
-            with open('latentaudio_debug_after_create.txt', 'w') as f:
+            with open("latentaudio_debug_after_create.txt", "w") as f:
                 f.write(f"AFTER dialog creation: beta_kl = {dialog.beta_kl_spin.value()}\n")
         except:
             pass
 
         # DEBUG: Log beta KL value before dialog execution
         try:
-            with open('latentaudio_debug_before_exec.txt', 'w') as f:
+            with open("latentaudio_debug_before_exec.txt", "w") as f:
                 f.write(f"BEFORE dialog.exec(): beta_kl = {dialog.beta_kl_spin.value()}\n")
         except:
             pass
@@ -680,12 +721,17 @@ class LatentExplorerApp(QWidget):
             self.generator.build_model()
 
         # Create progress dialog
-        start_epoch = resume_from.get('total_epochs_trained', 0) if resume_from else 0
+        start_epoch = resume_from.get("total_epochs_trained", 0) if resume_from else 0
         self.progress_dialog = QProgressDialog(
-            f"Training... (resuming from epoch {start_epoch + 1})" if resume_from else "Training...",
+            (
+                f"Training... (resuming from epoch {start_epoch + 1})"
+                if resume_from
+                else "Training..."
+            ),
             "Cancel",
-            0, self.training_total_epochs,
-            self
+            0,
+            self.training_total_epochs,
+            self,
         )
         self.progress_dialog.setWindowTitle("Training Progress")
         self.progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
@@ -761,7 +807,7 @@ class LatentExplorerApp(QWidget):
                 self._training_finished_popup_shown = True
 
             # Refresh preset list in case any were loaded
-            if hasattr(self, 'preset_tab'):
+            if hasattr(self, "preset_tab"):
                 self.preset_tab.refresh_list()
 
         elif model_loaded:
@@ -801,8 +847,7 @@ class LatentExplorerApp(QWidget):
         """Launch TensorBoard."""
         try:
             if not self.generator:
-                QMessageBox.warning(self, "No Generator",
-                                  "Initialize the generator first.")
+                QMessageBox.warning(self, "No Generator", "Initialize the generator first.")
                 return
 
             # Launch TensorBoard - the training logger handles process management
@@ -843,10 +888,10 @@ class LatentExplorerApp(QWidget):
                     filepath,
                     optimizer=None,  # We don't have access to optimizer after training
                     scheduler=None,  # We don't have access to scheduler after training
-                    current_epoch=training_state.get('total_epochs_trained', 0),
-                    total_epochs_trained=training_state.get('total_epochs_trained', 0),
-                    best_loss=training_state.get('best_loss', float('inf')),
-                    training_history=training_state.get('training_history', {})
+                    current_epoch=training_state.get("total_epochs_trained", 0),
+                    total_epochs_trained=training_state.get("total_epochs_trained", 0),
+                    best_loss=training_state.get("best_loss", float("inf")),
+                    training_history=training_state.get("training_history", {}),
                 )
                 QMessageBox.information(self, "Success", f"Model saved to {filepath}")
             except Exception as e:
@@ -855,7 +900,9 @@ class LatentExplorerApp(QWidget):
     def load_model(self):
         """Load a trained model."""
         try:
-            filepath, _ = QFileDialog.getOpenFileName(self, "Load Model", "", "PyTorch Models (*.pth)")
+            filepath, _ = QFileDialog.getOpenFileName(
+                self, "Load Model", "", "PyTorch Models (*.pth)"
+            )
             if not filepath:
                 return
 
@@ -877,15 +924,16 @@ class LatentExplorerApp(QWidget):
             self.status_widget.set_ready_status()
 
             # Show message about loaded model
-            if training_state.get('can_resume', False):
-                epochs = training_state.get('total_epochs_trained', 0)
+            if training_state.get("can_resume", False):
+                epochs = training_state.get("total_epochs_trained", 0)
                 QMessageBox.information(
-                    self, "Model Loaded",
+                    self,
+                    "Model Loaded",
                     f"Model loaded successfully!\n\n"
                     f"Training history found:\n"
                     f"- Total epochs trained: {epochs}\n"
                     f"- Best loss: {training_state.get('best_loss', 'N/A'):.6f}\n\n"
-                    f"Click 'Train Model' to continue training from where it left off."
+                    f"Click 'Train Model' to continue training from where it left off.",
                 )
             else:
                 QMessageBox.information(self, "Success", "Model loaded successfully!")
@@ -902,26 +950,27 @@ class LatentExplorerApp(QWidget):
             return
 
         reply = QMessageBox.question(
-            self, "Unload Model",
+            self,
+            "Unload Model",
             "Are you sure you want to unload the current model?\nUnsaved changes will be lost.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
             # Offload model to RAM instead of deleting to save VRAM but keep ready
             if self.generator:
                 self.generator.offload_to_ram()
-            
+
             # Clear UI states
             self.current_audio = None
             self._loaded_training_state = None
-            
+
             # Reset widgets
             self.waveform_viz.clear()
             self.generation_controls.set_generation_enabled(False)
             self.status_widget.set_status("Model offloaded to RAM")
-            
+
             QMessageBox.information(self, "Success", "Model offloaded to CPU RAM. VRAM cleared.")
 
 
@@ -932,11 +981,11 @@ def main():
     import os
 
     # Check if we have a display
-    if os.name == 'nt':  # Windows
+    if os.name == "nt":  # Windows
         # On Windows, assume we have display
         pass
     else:  # Unix-like
-        if not os.environ.get('DISPLAY'):
+        if not os.environ.get("DISPLAY"):
             print("No DISPLAY environment variable found. GUI cannot run in headless mode.")
             sys.exit(1)
 
@@ -958,6 +1007,7 @@ def main():
     except Exception as e:
         print(f"UI failed to start: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

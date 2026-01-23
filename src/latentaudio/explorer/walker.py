@@ -1,3 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # walker.py - Random walk generation in latent space
 """Random walk generation and exploration utilities."""
 
@@ -32,7 +50,7 @@ class LatentWalker:
         step_size: float = 0.4,
         temperature: float = 1.0,
         momentum: float = 0.5,
-        origin_pull: float = 0.1
+        origin_pull: float = 0.1,
     ) -> List[LatentVector]:
         """
         Generate a random walk through latent space with momentum.
@@ -65,15 +83,15 @@ class LatentWalker:
             # Pull is proportional to distance from center
             pull_dir = -current / (np.linalg.norm(current) + 1e-8)
             dist_from_origin = np.linalg.norm(current)
-            
+
             # 3. Combine directions: Momentum + Random + Pull
             # We use (1-momentum) as the noise weight
             combined_dir = (
-                momentum * velocity + 
-                (1.0 - momentum) * random_dir + 
-                origin_pull * (dist_from_origin / 10.0) * pull_dir
+                momentum * velocity
+                + (1.0 - momentum) * random_dir
+                + origin_pull * (dist_from_origin / 10.0) * pull_dir
             )
-            
+
             # Re-normalize direction
             velocity = combined_dir / (np.linalg.norm(combined_dir) + 1e-8)
 
@@ -82,7 +100,9 @@ class LatentWalker:
             current = current + step_vector
             walk.append(current.copy())
 
-        logger.debug(f"Generated momentum walk: {len(walk)} points, displacement: {np.linalg.norm(walk[-1] - walk[0]):.2f}")
+        logger.debug(
+            f"Generated momentum walk: {len(walk)} points, displacement: {np.linalg.norm(walk[-1] - walk[0]):.2f}"
+        )
         return walk
 
     def guided_walk(
@@ -90,7 +110,7 @@ class LatentWalker:
         start_vector: LatentVector,
         target_vector: LatentVector,
         n_steps: int = 10,
-        exploration_ratio: float = 0.3
+        exploration_ratio: float = 0.3,
     ) -> List[LatentVector]:
         """
         Generate a walk that moves toward a target but with exploration.
@@ -118,9 +138,8 @@ class LatentWalker:
 
             # Blend directions based on exploration ratio
             direction = (
-                (1 - exploration_ratio) * target_direction +
-                exploration_ratio * random_direction
-            )
+                1 - exploration_ratio
+            ) * target_direction + exploration_ratio * random_direction
             direction = direction / (np.linalg.norm(direction) + 1e-8)
 
             # Take step
@@ -132,10 +151,7 @@ class LatentWalker:
         return walk
 
     def boundary_walk(
-        self,
-        center_vector: LatentVector,
-        radius: float = 1.0,
-        n_points: int = 8
+        self, center_vector: LatentVector, radius: float = 1.0, n_points: int = 8
     ) -> List[LatentVector]:
         """
         Generate points on the boundary of a hypersphere around a center point.
@@ -165,10 +181,7 @@ class LatentWalker:
         return points
 
     def grid_walk(
-        self,
-        center_vector: LatentVector,
-        dimensions: List[int],
-        step_sizes: List[float]
+        self, center_vector: LatentVector, dimensions: List[int], step_sizes: List[float]
     ) -> List[LatentVector]:
         """
         Generate a grid of points around a center vector.
@@ -207,5 +220,7 @@ class LatentWalker:
 
             points.extend(new_points)
 
-        logger.debug(f"Generated grid walk: {len(points)} points across {len(dimensions)} dimensions")
+        logger.debug(
+            f"Generated grid walk: {len(points)} points across {len(dimensions)} dimensions"
+        )
         return points

@@ -1,3 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # visualizer.py - Waveform visualization widget
 """Waveform visualization widget with real-time audio display."""
 
@@ -7,9 +25,14 @@ from PyQt6.QtGui import QPainter, QPen, QBrush, QColor
 import numpy as np
 
 from ..theme import (
-    BG_DARK, ACCENT_PRIMARY, GRID_COLOR, CENTER_LINE_COLOR,
-    WAVEFORM_HEIGHT_MIN, WAVEFORM_HEIGHT_MAX, FONT_SIZE_SMALL,
-    get_font
+    BG_DARK,
+    ACCENT_PRIMARY,
+    GRID_COLOR,
+    CENTER_LINE_COLOR,
+    WAVEFORM_HEIGHT_MIN,
+    WAVEFORM_HEIGHT_MAX,
+    FONT_SIZE_SMALL,
+    get_font,
 )
 
 
@@ -78,7 +101,7 @@ class WaveformVisualizer(QWidget):
             x = int(i / len(self.audio_data) * width)
 
             # Get max amplitude in this window for better visibility
-            window = self.audio_data[i:i+step]
+            window = self.audio_data[i : i + step]
             sample = np.max(np.abs(window)) * np.sign(np.mean(window))
 
             y = int(center_y - (sample * center_y * 0.85))

@@ -59,6 +59,22 @@ cd LatentAudio
     ```
 
 **Download Trained 128D Kicks Model: [here](https://huggingface.co/Meowmeow42/LatentAudio/tree/main)**
+MOST OF THE MODEL WEIGHT IS OPTMIZERS AND TRAINING STATES YOU CAN PRUNE THIS DOWN TO ~1.3gb and even make it fp16 for even smaller model. SAVES ON VRAM AND MEMORY.
+
+FULL MODEL GPU AND CPU COMPARISON
+| Metric | GPU (CUDA) | CPU (Intel/AMD) |
+| :--- | :--- | :--- |
+| Latency | 5.23 ms | 132.06 ms |
+| RTF (Real-time Factor) | 191.4x | 7.6x |
+| Speed Description | Instantaneous | Extremely Fast |
+
+PRUNED RESULTS USING GPU
+| Metric | FP32 Pruned (1.3 GB) | FP16 Pruned (656 MB) |
+| :--- | :--- | :--- |
+| Inference Latency | 5.51 ms | 4.26 ms |
+| Real-time Factor | 181x | 235x |
+| VRAM Usage | 1,321 MB | 667 MB |
+| Load Time | 17.45 s | 15.98 s |
 
 ## 🧠 Model Architecture: The Phase 7 Engine
 
@@ -171,9 +187,13 @@ if you want to move to a larger batch size for even higher fidelity:
 3.  Keep Grad Accumulation at 1 (1 less than 8 batch, this keeps your effective batch size at 16, but speeds up training because you aren't doing redundant backward passes).
 4.  Monitor VRAM: Batch size 16 with Phase 7's HD loss (4096 FFT) will use significantly more GPU memory. If you get an "Out of Memory" error, you must revert to Batch 8 with Accumulation 2.
 
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
 ---
 
-TODO: 
+TODO:
 - UPDATE THE README TO HOLD TRAINED EXAMPLE MODEL LINK AFTER UPLOAD.
 - FIX THE PRESETS TAB (expected behavior: saves latent presets. Currently errors. Not to be confused with Training Presets.)
 - Probably rewrite some of the other preset's (training presets) default settings.

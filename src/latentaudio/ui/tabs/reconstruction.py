@@ -1,19 +1,40 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # reconstruction.py - VAE Reconstruction testing tab
 """Tab for testing how well the model reconstructs existing audio samples."""
 
 import numpy as np
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QGroupBox, QFileDialog, QMessageBox
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QGroupBox,
+    QFileDialog,
+    QMessageBox,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor
 
 from ..widgets.visualizer import WaveformVisualizer
-from ..theme import (
-    BUTTON_STYLE, GROUP_BOX_STYLE, ACCENT_PRIMARY,
-    TEXT_SECONDARY, NORMAL_FONT
-)
+from ..theme import BUTTON_STYLE, GROUP_BOX_STYLE, ACCENT_PRIMARY, TEXT_SECONDARY, NORMAL_FONT
 
 
 class ReconstructionTab(QWidget):
@@ -26,11 +47,11 @@ class ReconstructionTab(QWidget):
         super().__init__(parent)
         self.generator = generator
         self.latent_widget = latent_widget
-        
+
         self.original_audio = None
         self.recon_audio = None
         self.current_vector = None
-        
+
         self.setup_ui()
 
     def setup_ui(self):
@@ -53,17 +74,17 @@ class ReconstructionTab(QWidget):
         ref_group = QGroupBox("Original Reference")
         ref_group.setStyleSheet(GROUP_BOX_STYLE)
         ref_layout = QVBoxLayout()
-        
+
         self.ref_waveform = WaveformVisualizer(color=QColor(100, 150, 255))
         ref_layout.addWidget(self.ref_waveform)
-        
+
         ref_controls = QHBoxLayout()
         self.play_ref_btn = QPushButton("▶ Play Original")
         self.play_ref_btn.clicked.connect(lambda: self.play_audio(self.original_audio))
         self.play_ref_btn.setEnabled(False)
         self.play_ref_btn.setStyleSheet(BUTTON_STYLE)
         ref_controls.addWidget(self.play_ref_btn)
-        
+
         ref_layout.addLayout(ref_controls)
         ref_group.setLayout(ref_layout)
         layout.addWidget(ref_group)
@@ -72,30 +93,30 @@ class ReconstructionTab(QWidget):
         recon_group = QGroupBox("Model Reconstruction")
         recon_group.setStyleSheet(GROUP_BOX_STYLE)
         recon_layout = QVBoxLayout()
-        
+
         self.recon_waveform = WaveformVisualizer()
         recon_layout.addWidget(self.recon_waveform)
-        
+
         recon_controls = QHBoxLayout()
         self.play_recon_btn = QPushButton("▶ Play Reconstruction")
         self.play_recon_btn.clicked.connect(lambda: self.play_audio(self.recon_audio))
         self.play_recon_btn.setEnabled(False)
         self.play_recon_btn.setStyleSheet(BUTTON_STYLE)
         recon_controls.addWidget(self.play_recon_btn)
-        
+
         recon_layout.addLayout(recon_controls)
         recon_group.setLayout(recon_layout)
         layout.addWidget(recon_group)
 
         # Action buttons
         actions_layout = QHBoxLayout()
-        
+
         self.push_btn = QPushButton("🧬 Push to Main Sliders")
         self.push_btn.clicked.connect(self.push_to_sliders)
         self.push_btn.setEnabled(False)
         self.push_btn.setStyleSheet(BUTTON_STYLE)
         actions_layout.addWidget(self.push_btn)
-        
+
         layout.addLayout(actions_layout)
         layout.addStretch()
 
@@ -119,14 +140,16 @@ class ReconstructionTab(QWidget):
 
             # 2. Encode
             self.current_vector = self.generator.encode_audio(self.original_audio)
-            
+
             # 3. Reconstruct
             self.recon_audio = self.generator.generate_from_latent(self.current_vector)
             self.recon_waveform.set_audio(self.recon_audio)
             self.play_recon_btn.setEnabled(True)
             self.push_btn.setEnabled(True)
 
-            QMessageBox.information(self, "Success", "Audio encoded and reconstructed successfully!")
+            QMessageBox.information(
+                self, "Success", "Audio encoded and reconstructed successfully!"
+            )
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Reconstruction failed: {e}")
@@ -136,6 +159,7 @@ class ReconstructionTab(QWidget):
         if audio is not None:
             try:
                 import sounddevice as sd
+
                 sd.play(audio, self.generator.config.sample_rate)
             except ImportError:
                 QMessageBox.warning(self, "Error", "Install sounddevice: pip install sounddevice")

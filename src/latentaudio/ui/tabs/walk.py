@@ -1,17 +1,42 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # walk.py - Random walk exploration tab widget
 """Random walk exploration tab for discovering new sounds."""
 
 import numpy as np
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QGroupBox, QSpinBox, QDoubleSpinBox, QSlider, QFileDialog, QMessageBox
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QGroupBox,
+    QSpinBox,
+    QDoubleSpinBox,
+    QSlider,
+    QFileDialog,
+    QMessageBox,
 )
 from PyQt6.QtCore import Qt
 
 from ..widgets.visualizer import WaveformVisualizer
-from ..theme import (
-    BUTTON_STYLE, GROUP_BOX_STYLE, TEXT_SECONDARY, NORMAL_FONT
-)
+from ..theme import BUTTON_STYLE, GROUP_BOX_STYLE, TEXT_SECONDARY, NORMAL_FONT
 
 
 class WalkTab(QWidget):
@@ -159,11 +184,11 @@ class WalkTab(QWidget):
         try:
             # Generate latent walk
             self.current_walk = self.generator.random_walk(
-                start_vector=start_vector, 
-                n_steps=n_steps, 
+                start_vector=start_vector,
+                n_steps=n_steps,
                 step_size=step_size,
                 momentum=momentum,
-                origin_pull=origin_pull
+                origin_pull=origin_pull,
             )
 
             # Generate audio for each step
@@ -185,8 +210,9 @@ class WalkTab(QWidget):
             self.status_label.setText(f"Generated {len(self.current_walk)}-step walk")
 
             QMessageBox.information(
-                self, "Success",
-                f"Generated {len(self.current_walk)}-step random walk!\nUse slider to explore each step."
+                self,
+                "Success",
+                f"Generated {len(self.current_walk)}-step random walk!\nUse slider to explore each step.",
             )
 
         except Exception as e:
@@ -208,6 +234,7 @@ class WalkTab(QWidget):
         if self.current_audio and 0 <= self.current_index < len(self.current_audio):
             try:
                 import sounddevice as sd
+
                 audio = self.current_audio[self.current_index]
                 sd.play(audio, self.generator.config.sample_rate)
             except ImportError:
@@ -250,8 +277,7 @@ class WalkTab(QWidget):
                 self.generator.save_audio(audio, filename)
 
             QMessageBox.information(
-                self, "Success",
-                f"Saved {len(self.current_audio)} files to {folder}"
+                self, "Success", f"Saved {len(self.current_audio)} files to {folder}"
             )
 
         except Exception as e:

@@ -1,18 +1,41 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # validator.py - Input validation utilities for LatentAudio
 """Input validation utilities for LatentAudio."""
 
 import numpy as np
 from .types import ValidationResult, AudioArray, LatentVector
 from .config import (
-    MAX_LATENT_DIM, MIN_LATENT_DIM, MAX_DURATION, MIN_DURATION,
-    MAX_SAMPLE_RATE, MIN_SAMPLE_RATE, LATENT_DIM, WAVEFORM_LENGTH,
-    SUPPORTED_AUDIO_EXTENSIONS
+    MAX_LATENT_DIM,
+    MIN_LATENT_DIM,
+    MAX_DURATION,
+    MIN_DURATION,
+    MAX_SAMPLE_RATE,
+    MIN_SAMPLE_RATE,
+    LATENT_DIM,
+    WAVEFORM_LENGTH,
+    SUPPORTED_AUDIO_EXTENSIONS,
 )
 
+
 def validate_latent_vector(
-    vector: np.ndarray,
-    expected_dim: int = LATENT_DIM,
-    name: str = "latent vector"
+    vector: np.ndarray, expected_dim: int = LATENT_DIM, name: str = "latent vector"
 ) -> ValidationResult:
     """Validate a latent vector.
 
@@ -40,7 +63,9 @@ def validate_latent_vector(
         result.add_error(f"1D {name} must have {expected_dim} dimensions, got {vector.shape[0]}")
 
     if vector.ndim == 2 and vector.shape[1] != expected_dim:
-        result.add_error(f"2D {name} must have {expected_dim} dimensions in last axis, got {vector.shape[1]}")
+        result.add_error(
+            f"2D {name} must have {expected_dim} dimensions in last axis, got {vector.shape[1]}"
+        )
 
     # Check for NaN/inf values
     if not np.isfinite(vector).all():
@@ -48,10 +73,9 @@ def validate_latent_vector(
 
     return result
 
+
 def validate_audio_array(
-    audio: np.ndarray,
-    expected_length: int = WAVEFORM_LENGTH,
-    name: str = "audio array"
+    audio: np.ndarray, expected_length: int = WAVEFORM_LENGTH, name: str = "audio array"
 ) -> ValidationResult:
     """Validate an audio array.
 
@@ -80,7 +104,9 @@ def validate_audio_array(
 
     if audio.ndim == 2:
         if audio.shape[1] != expected_length:
-            result.add_error(f"2D {name} must have {expected_length} samples per channel, got {audio.shape[1]}")
+            result.add_error(
+                f"2D {name} must have {expected_length} samples per channel, got {audio.shape[1]}"
+            )
 
     # Check for NaN/inf values
     if not np.isfinite(audio).all():
@@ -90,9 +116,12 @@ def validate_audio_array(
     if audio.size > 0:
         max_val = np.max(np.abs(audio))
         if max_val > 10.0:  # Very loud, likely not normalized
-            result.add_warning(f"{name} has very high amplitude ({max_val:.1f}), may need normalization")
+            result.add_warning(
+                f"{name} has very high amplitude ({max_val:.1f}), may need normalization"
+            )
 
     return result
+
 
 def validate_sample_rate(sample_rate: int) -> ValidationResult:
     """Validate sample rate.
@@ -109,9 +138,12 @@ def validate_sample_rate(sample_rate: int) -> ValidationResult:
         result.add_error(f"Sample rate must be an integer, got {type(sample_rate)}")
 
     if sample_rate < MIN_SAMPLE_RATE or sample_rate > MAX_SAMPLE_RATE:
-        result.add_error(f"Sample rate must be between {MIN_SAMPLE_RATE} and {MAX_SAMPLE_RATE} Hz, got {sample_rate}")
+        result.add_error(
+            f"Sample rate must be between {MIN_SAMPLE_RATE} and {MAX_SAMPLE_RATE} Hz, got {sample_rate}"
+        )
 
     return result
+
 
 def validate_duration(duration: float) -> ValidationResult:
     """Validate duration.
@@ -128,9 +160,12 @@ def validate_duration(duration: float) -> ValidationResult:
         result.add_error(f"Duration must be a number, got {type(duration)}")
 
     if duration < MIN_DURATION or duration > MAX_DURATION:
-        result.add_error(f"Duration must be between {MIN_DURATION} and {MAX_DURATION} seconds, got {duration}")
+        result.add_error(
+            f"Duration must be between {MIN_DURATION} and {MAX_DURATION} seconds, got {duration}"
+        )
 
     return result
+
 
 def validate_latent_dim(latent_dim: int) -> ValidationResult:
     """Validate latent dimension.
@@ -147,9 +182,12 @@ def validate_latent_dim(latent_dim: int) -> ValidationResult:
         result.add_error(f"Latent dimension must be an integer, got {type(latent_dim)}")
 
     if latent_dim < MIN_LATENT_DIM or latent_dim > MAX_LATENT_DIM:
-        result.add_error(f"Latent dimension must be between {MIN_LATENT_DIM} and {MAX_LATENT_DIM}, got {latent_dim}")
+        result.add_error(
+            f"Latent dimension must be between {MIN_LATENT_DIM} and {MAX_LATENT_DIM}, got {latent_dim}"
+        )
 
     return result
+
 
 def validate_file_extension(filepath: str) -> ValidationResult:
     """Validate audio file extension.
@@ -163,9 +201,12 @@ def validate_file_extension(filepath: str) -> ValidationResult:
     result = ValidationResult(is_valid=True)
 
     import os
+
     _, ext = os.path.splitext(filepath.lower())
 
     if ext not in SUPPORTED_AUDIO_EXTENSIONS:
-        result.add_error(f"Unsupported file extension '{ext}'. Supported: {SUPPORTED_AUDIO_EXTENSIONS}")
+        result.add_error(
+            f"Unsupported file extension '{ext}'. Supported: {SUPPORTED_AUDIO_EXTENSIONS}"
+        )
 
     return result

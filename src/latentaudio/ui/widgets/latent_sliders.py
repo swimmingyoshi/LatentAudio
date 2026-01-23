@@ -1,16 +1,46 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # latent_sliders.py - Latent vector editing widget with sliders
 """Latent vector editing widget with individual dimension sliders."""
 
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSlider,
-    QLabel, QGroupBox, QDoubleSpinBox, QCheckBox, QScrollArea
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QSlider,
+    QLabel,
+    QGroupBox,
+    QDoubleSpinBox,
+    QCheckBox,
+    QScrollArea,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 import numpy as np
 
 from ..theme import (
-    SLIDER_HEIGHT, BUTTON_STYLE, SLIDER_STYLE, GROUP_BOX_STYLE,
-    TEXT_SECONDARY, NORMAL_FONT
+    SLIDER_HEIGHT,
+    BUTTON_STYLE,
+    SLIDER_STYLE,
+    GROUP_BOX_STYLE,
+    TEXT_SECONDARY,
+    NORMAL_FONT,
 )
 
 
@@ -75,7 +105,9 @@ class LatentVectorWidget(QWidget):
         slider_controls_layout = QVBoxLayout()
 
         self.sliders = []
-        max_dims = min(self.latent_dim, self.latent_dim)  # Limit to 32 dimensions for UI performance
+        max_dims = min(
+            self.latent_dim, self.latent_dim
+        )  # Limit to 32 dimensions for UI performance
 
         for i in range(max_dims):
             # Extend dimension_locks if needed
@@ -87,7 +119,9 @@ class LatentVectorWidget(QWidget):
             # Lock checkbox
             lock_checkbox = QCheckBox("Lock")
             lock_checkbox.setChecked(self.dimension_locks[i])
-            lock_checkbox.stateChanged.connect(lambda state, idx=i: self.on_lock_changed(idx, state))
+            lock_checkbox.stateChanged.connect(
+                lambda state, idx=i: self.on_lock_changed(idx, state)
+            )
             row.addWidget(lock_checkbox)
 
             # Dimension label

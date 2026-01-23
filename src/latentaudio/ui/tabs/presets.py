@@ -1,15 +1,38 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # presets.py - Preset management tab widget
 """Preset management tab for saving and loading latent vectors."""
 
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget,
-    QListWidgetItem, QInputDialog, QMessageBox, QLabel
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QListWidget,
+    QListWidgetItem,
+    QInputDialog,
+    QMessageBox,
+    QLabel,
 )
 from PyQt6.QtCore import pyqtSignal
 
-from ..theme import (
-    BUTTON_STYLE, LIST_WIDGET_STYLE, TEXT_SECONDARY, NORMAL_FONT
-)
+from ..theme import BUTTON_STYLE, LIST_WIDGET_STYLE, TEXT_SECONDARY, NORMAL_FONT
 
 
 class PresetManager(QWidget):
@@ -82,7 +105,7 @@ class PresetManager(QWidget):
             QMessageBox.warning(self, "Error", "No current vector to save")
             return
 
-        name, ok = QInputDialog.getText(self, 'Save Preset', 'Preset name:')
+        name, ok = QInputDialog.getText(self, "Save Preset", "Preset name:")
         if ok and name:
             try:
                 self.generator.save_preset(name, current_vector)
@@ -113,9 +136,10 @@ class PresetManager(QWidget):
         name = current_item.text()
 
         reply = QMessageBox.question(
-            self, 'Delete Preset',
+            self,
+            "Delete Preset",
             f"Are you sure you want to delete preset '{name}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:

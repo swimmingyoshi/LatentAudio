@@ -1,18 +1,42 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # morph.py - Morphing/Interpolation tab widget
 """Morphing and interpolation tab for creating smooth transitions between sounds."""
 
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QGroupBox, QSpinBox, QComboBox, QSlider, QFileDialog, QMessageBox
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QGroupBox,
+    QSpinBox,
+    QComboBox,
+    QSlider,
+    QFileDialog,
+    QMessageBox,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 import numpy as np
 
 from ..widgets.visualizer import WaveformVisualizer
-from ..theme import (
-    BUTTON_STYLE, GROUP_BOX_STYLE, ACCENT_PRIMARY,
-    TEXT_SECONDARY, NORMAL_FONT
-)
+from ..theme import BUTTON_STYLE, GROUP_BOX_STYLE, ACCENT_PRIMARY, TEXT_SECONDARY, NORMAL_FONT
 
 
 class MorphTab(QWidget):
@@ -191,7 +215,9 @@ class MorphTab(QWidget):
             if has_end:
                 parts.append("B✓")
 
-            self.status_label.setText("Set both points: " + ", ".join(parts) if parts else "Set both start and end points")
+            self.status_label.setText(
+                "Set both points: " + ", ".join(parts) if parts else "Set both start and end points"
+            )
             self.status_label.setStyleSheet(f"color: {TEXT_SECONDARY.name()};")
             self.generate_btn.setEnabled(False)
 
@@ -201,7 +227,7 @@ class MorphTab(QWidget):
             return
 
         n_steps = self.steps_spin.value()
-        method = 'spherical' if 'Spherical' in self.method_combo.currentText() else 'linear'
+        method = "spherical" if "Spherical" in self.method_combo.currentText() else "linear"
 
         try:
             # Generate latent morph
@@ -228,8 +254,9 @@ class MorphTab(QWidget):
             self.morph_generated.emit(self.current_morph)
 
             QMessageBox.information(
-                self, "Success",
-                f"Generated {len(self.current_morph)}-step morph!\nUse slider to preview each step."
+                self,
+                "Success",
+                f"Generated {len(self.current_morph)}-step morph!\nUse slider to preview each step.",
             )
 
         except Exception as e:
@@ -251,6 +278,7 @@ class MorphTab(QWidget):
         if self.current_audio and 0 <= self.current_index < len(self.current_audio):
             try:
                 import sounddevice as sd
+
                 audio = self.current_audio[self.current_index]
                 sd.play(audio, self.generator.config.sample_rate)
             except ImportError:
@@ -263,6 +291,7 @@ class MorphTab(QWidget):
 
         try:
             import sounddevice as sd
+
             # Concatenate all steps
             full_audio = np.concatenate(self.current_audio)
             # Play
@@ -287,8 +316,7 @@ class MorphTab(QWidget):
                 self.generator.save_audio(audio, filename)
 
             QMessageBox.information(
-                self, "Success",
-                f"Saved {len(self.current_audio)} files to {folder}"
+                self, "Success", f"Saved {len(self.current_audio)} files to {folder}"
             )
 
         except Exception as e:

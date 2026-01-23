@@ -1,3 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # config.py - UPDATED Configuration for preventing posterior collapse
 
 from pathlib import Path
@@ -46,7 +64,7 @@ SKIP_DROPOUT_PROB = 0.5
 DEFAULT_EPOCHS = 1000
 DEFAULT_BATCH_SIZE = 8
 DEFAULT_LEARNING_RATE = 0.0001
-DEFAULT_BETA_KL = 0.001  
+DEFAULT_BETA_KL = 0.001
 DEFAULT_WEIGHT_DECAY = 0.001
 DEFAULT_GRAD_CLIP = 1.0  # Increased for Phase 7 complex gradients
 
@@ -95,7 +113,7 @@ PREVIEW_HEIGHT = 120
 # ============================================================================
 # AUDIO PROCESSING
 # ============================================================================
-SUPPORTED_AUDIO_EXTENSIONS = ('.wav', '.mp3', '.flac', '.ogg', '.aiff')
+SUPPORTED_AUDIO_EXTENSIONS = (".wav", ".mp3", ".flac", ".ogg", ".aiff")
 LOW_PASS_ORDER = 4
 
 # ============================================================================
@@ -109,7 +127,7 @@ STFT_LOSS_SKIP_INTERVAL = 5
 # ============================================================================
 # SPECTRAL LOSS SETTINGS - FAST MODE
 # ============================================================================
-STFT_MODE = 'fast'
+STFT_MODE = "fast"
 
 # Quality mode (HD Resolution for Phase 7 + Transient Micro-STFT)
 STFT_QUALITY_RESOLUTIONS = [128, 256, 512, 1024, 2048, 4096]
@@ -125,19 +143,19 @@ STFT_FAST_WIN_LENGTHS = [128, 256, 512, 1024, 2048, 4096]
 # SKIP GENERATION TRAINING
 # ============================================================================
 SKIP_DROPOUT_SCHEDULE = {
-    'phase1_epochs': 10,   # Sync with swap
-    'phase1_dropout': 0.0,
-    'phase2_epochs': 100,
-    'phase2_dropout': 0.05,
-    'phase3_dropout': 0.1
+    "phase1_epochs": 10,  # Sync with swap
+    "phase1_dropout": 0.0,
+    "phase2_epochs": 100,
+    "phase2_dropout": 0.05,
+    "phase3_dropout": 0.1,
 }
 
 SKIP_SWAP_SCHEDULE = {
-    'phase1_epochs': 10,   # Start forcing honesty earlier
-    'phase1_swap': 0.25,   # Low probability initial test
-    'phase2_epochs': 200,
-    'phase2_swap': 0.4,
-    'phase3_swap': 0.5
+    "phase1_epochs": 10,  # Start forcing honesty earlier
+    "phase1_swap": 0.25,  # Low probability initial test
+    "phase2_epochs": 200,
+    "phase2_swap": 0.4,
+    "phase3_swap": 0.5,
 }
 
 
@@ -157,6 +175,7 @@ MIN_SAMPLE_RATE = 8000
 try:
     import librosa
     import soundfile as sf
+
     AUDIO_LIBS_AVAILABLE = True
 except ImportError:
     AUDIO_LIBS_AVAILABLE = False
