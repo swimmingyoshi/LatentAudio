@@ -189,7 +189,7 @@ if you want to move to a larger batch size for even higher fidelity:
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) and [LICENCE INTENT](LICENCE-INTENT.md) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) and [LICENSE INTENT](LICENSE-INTENT.md) file for details.
 
 ---
 
