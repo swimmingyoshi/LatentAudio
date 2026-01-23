@@ -22,7 +22,7 @@ or download from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/).
 ### 2. Installation
 1. **Clone the repository**:
 ```bash
-git clone https://github.com/yourusername/LatentAudio.git
+git clone https://github.com/swimmingyoshi/LatentAudio.git
 ```
 ```bash
 cd LatentAudio
