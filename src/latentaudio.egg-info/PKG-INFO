@@ -1,3 +1,62 @@
+Metadata-Version: 2.4
+Name: latentaudio
+Version: 1.0.0
+Summary: Direct Neural Audio Generation and Exploration
+Author-email: LatentAudio Team <team@latentaudio.dev>
+Maintainer-email: LatentAudio Team <team@latentaudio.dev>
+License: AGPL-3.0
+Project-URL: Homepage, https://github.com/yourorg/latentaudio
+Project-URL: Documentation, https://latentaudio.readthedocs.io/
+Project-URL: Repository, https://github.com/yourorg/latentaudio.git
+Project-URL: Issues, https://github.com/yourorg/latentaudio/issues
+Project-URL: Changelog, https://github.com/yourorg/latentaudio/blob/main/CHANGELOG.md
+Keywords: audio,neural-network,vae,generation,synthesis,machine-learning
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Multimedia :: Sound/Audio :: Analysis
+Classifier: Topic :: Multimedia :: Sound/Audio :: Synthesis
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: torch>=2.0.0
+Requires-Dist: torchvision>=0.15.0
+Requires-Dist: torchaudio>=2.0.0
+Requires-Dist: numpy>=1.21.0
+Requires-Dist: scipy>=1.7.0
+Requires-Dist: librosa>=0.9.0
+Requires-Dist: soundfile>=0.10.0
+Requires-Dist: PyQt6>=6.4.0
+Requires-Dist: sounddevice>=0.4.0
+Requires-Dist: loguru>=0.6.0
+Requires-Dist: tensorboard>=2.10.0
+Requires-Dist: click>=8.0.0
+Requires-Dist: tqdm>=4.64.0
+Requires-Dist: pandas>=1.5.0
+Requires-Dist: matplotlib>=3.5.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: black>=22.0.0; extra == "dev"
+Requires-Dist: isort>=5.10.0; extra == "dev"
+Requires-Dist: mypy>=1.0.0; extra == "dev"
+Requires-Dist: flake8>=5.0.0; extra == "dev"
+Requires-Dist: pre-commit>=2.20.0; extra == "dev"
+Provides-Extra: docs
+Requires-Dist: sphinx>=5.0.0; extra == "docs"
+Requires-Dist: sphinx-rtd-theme>=1.2.0; extra == "docs"
+Requires-Dist: myst-parser>=0.18.0; extra == "docs"
+Provides-Extra: gpu
+Requires-Dist: torch[cu118]>=2.0.0; extra == "gpu"
+Dynamic: license-file
+
 # LatentAudio: Phase 7 High-Fidelity Neural Manifold Exploration
 
 LatentAudio is an advanced neural audio synthesis system that provides direct, high-fidelity exploration of learned sound manifolds. Unlike traditional synthesisers, LatentAudio utilizes a sophisticated Variational Autoencoder (VAE) to learn a continuous latent space of sound, allowing for seamless morphing, exploratory walks, and semantic attribute manipulation.

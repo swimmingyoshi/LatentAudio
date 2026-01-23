@@ -1,0 +1,6 @@
+[console_scripts]
+latent-explore = latentaudio.cli:explore_command
+latent-generate = latentaudio.cli:generate_command
+latent-train = latentaudio.cli:train_command
+latent-ui = latentaudio.ui.app:main
+latentaudio = latentaudio.cli:main

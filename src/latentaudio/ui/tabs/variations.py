@@ -1,53 +1,79 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # variations.py - Latent variations exploration tab
 """Tab for exploring local variations around a central latent vector."""
 
 import numpy as np
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QGroupBox, QSlider, QGridLayout, QMessageBox, QFrame
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QGroupBox,
+    QSlider,
+    QGridLayout,
+    QMessageBox,
+    QFrame,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 
 from ..widgets.visualizer import WaveformVisualizer
-from ..theme import (
-    BUTTON_STYLE, GROUP_BOX_STYLE, TEXT_SECONDARY, NORMAL_FONT, ACCENT_PRIMARY
-)
+from ..theme import BUTTON_STYLE, GROUP_BOX_STYLE, TEXT_SECONDARY, NORMAL_FONT, ACCENT_PRIMARY
 
 
 class VariationCell(QFrame):
     """A single cell in the variation grid."""
-    
+
     play_requested = pyqtSignal(np.ndarray)
     select_requested = pyqtSignal(np.ndarray)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.setStyleSheet("VariationCell { border: 1px solid #333; border-radius: 4px; background: #1a1a1a; }")
-        
+        self.setStyleSheet(
+            "VariationCell { border: 1px solid #333; border-radius: 4px; background: #1a1a1a; }"
+        )
+
         self.audio = None
         self.vector = None
-        
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
-        
+
         self.visualizer = WaveformVisualizer()
         self.visualizer.setMinimumHeight(80)
         layout.addWidget(self.visualizer)
-        
+
         btn_layout = QHBoxLayout()
         self.play_btn = QPushButton("▶")
         self.play_btn.setFixedWidth(30)
         self.play_btn.clicked.connect(self.on_play)
         self.play_btn.setEnabled(False)
         btn_layout.addWidget(self.play_btn)
-        
+
         self.select_btn = QPushButton("🎯 Center")
         self.select_btn.clicked.connect(self.on_select)
         self.select_btn.setEnabled(False)
         self.select_btn.setFont(NORMAL_FONT)
         btn_layout.addWidget(self.select_btn)
-        
+
         layout.addLayout(btn_layout)
 
     def set_data(self, audio, vector):
@@ -76,11 +102,11 @@ class VariationsTab(QWidget):
         super().__init__(parent)
         self.generator = generator
         self.latent_widget = latent_widget
-        
+
         self.center_vector = None
         self.variation_vectors = []
         self.variation_audios = []
-        
+
         self.setup_ui()
 
     def setup_ui(self):
@@ -98,7 +124,7 @@ class VariationsTab(QWidget):
         self.sync_btn.clicked.connect(self.sync_from_sliders)
         self.sync_btn.setStyleSheet(BUTTON_STYLE)
         source_layout.addWidget(self.sync_btn)
-        
+
         self.random_btn = QPushButton("🎲 Random Center")
         self.random_btn.clicked.connect(self.random_center)
         self.random_btn.setStyleSheet(BUTTON_STYLE)
@@ -112,7 +138,7 @@ class VariationsTab(QWidget):
         self.dev_slider.setRange(1, 100)
         self.dev_slider.setValue(20)
         dev_layout.addWidget(self.dev_slider)
-        
+
         self.dev_label = QLabel("0.20")
         self.dev_label.setFixedWidth(40)
         self.dev_slider.valueChanged.connect(lambda v: self.dev_label.setText(f"{v/100:.2f}"))
@@ -122,7 +148,9 @@ class VariationsTab(QWidget):
         # Row 3: Generate
         self.generate_btn = QPushButton("✨ Generate Grid")
         self.generate_btn.clicked.connect(self.generate_grid)
-        self.generate_btn.setStyleSheet(BUTTON_STYLE + "font-weight: bold; background-color: #2e4a3e;")
+        self.generate_btn.setStyleSheet(
+            BUTTON_STYLE + "font-weight: bold; background-color: #2e4a3e;"
+        )
         controls_layout.addWidget(self.generate_btn)
 
         controls_group.setLayout(controls_layout)
@@ -138,7 +166,7 @@ class VariationsTab(QWidget):
                 cell.select_requested.connect(self.on_cell_selected)
                 self.grid_layout.addWidget(cell, r, c)
                 self.cells.append(cell)
-        
+
         layout.addLayout(self.grid_layout)
         layout.addStretch()
 
@@ -171,7 +199,7 @@ class VariationsTab(QWidget):
 
         deviation = self.dev_slider.value() / 100.0
         dim = len(self.center_vector)
-        
+
         try:
             for i, cell in enumerate(self.cells):
                 # The middle cell (index 4) is the exact center
@@ -181,15 +209,19 @@ class VariationsTab(QWidget):
                     # Random variation
                     noise = np.random.randn(dim)
                     z = self.center_vector + noise * deviation
-                
+
                 audio = self.generator.generate_from_latent(z)
                 cell.set_data(audio, z)
-                
+
                 # Highlight center cell
                 if i == 4:
-                    cell.setStyleSheet("VariationCell { border: 2px solid #00FF00; border-radius: 4px; background: #1a2a1a; }")
+                    cell.setStyleSheet(
+                        "VariationCell { border: 2px solid #00FF00; border-radius: 4px; background: #1a2a1a; }"
+                    )
                 else:
-                    cell.setStyleSheet("VariationCell { border: 1px solid #333; border-radius: 4px; background: #1a1a1a; }")
+                    cell.setStyleSheet(
+                        "VariationCell { border: 1px solid #333; border-radius: 4px; background: #1a1a1a; }"
+                    )
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Grid generation failed: {e}")
@@ -205,6 +237,7 @@ class VariationsTab(QWidget):
         if audio is not None:
             try:
                 import sounddevice as sd
+
                 sd.play(audio, self.generator.config.sample_rate)
             except ImportError:
                 QMessageBox.warning(self, "Error", "Install sounddevice: pip install sounddevice")

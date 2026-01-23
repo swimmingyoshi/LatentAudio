@@ -1,3 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # losses.py - Audio-specific loss functions with NaN protection
 """Spectral and perceptual loss functions with numerical stability."""
 
@@ -6,9 +24,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import List, Tuple, Optional
 from ..config import (
-    STFT_QUALITY_RESOLUTIONS, STFT_QUALITY_HOPS, STFT_QUALITY_WIN_LENGTHS,
-    STFT_FAST_RESOLUTIONS, STFT_FAST_HOPS, STFT_FAST_WIN_LENGTHS,
-    STFT_MODE
+    STFT_QUALITY_RESOLUTIONS,
+    STFT_QUALITY_HOPS,
+    STFT_QUALITY_WIN_LENGTHS,
+    STFT_FAST_RESOLUTIONS,
+    STFT_FAST_HOPS,
+    STFT_FAST_WIN_LENGTHS,
+    STFT_MODE,
 )
 
 # Add these safety constants
@@ -25,7 +47,7 @@ class STFTLoss(nn.Module):
         n_fft: int = 1024,
         hop_length: int = 256,
         win_length: int = 1024,
-        window: str = "hann_window"
+        window: str = "hann_window",
     ):
         super().__init__()
         self.n_fft = n_fft
@@ -35,7 +57,7 @@ class STFTLoss(nn.Module):
 
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Compute STFT loss with Complex Phase awareness and Pre-Emphasis."""
-        
+
         # Ensure 2D [Batch, Length] for torch.stft
         if x.dim() == 3:
             x = x.squeeze(1)
@@ -55,12 +77,20 @@ class STFTLoss(nn.Module):
 
         try:
             x_stft = torch.stft(
-                x_pre, self.n_fft, self.hop_length, self.win_length,
-                self.window, return_complex=True
+                x_pre,
+                self.n_fft,
+                self.hop_length,
+                self.win_length,
+                self.window,
+                return_complex=True,
             )
             y_stft = torch.stft(
-                y_pre, self.n_fft, self.hop_length, self.win_length,
-                self.window, return_complex=True
+                y_pre,
+                self.n_fft,
+                self.hop_length,
+                self.win_length,
+                self.window,
+                return_complex=True,
             )
         except RuntimeError as e:
             # Fallback if STFT fails
@@ -71,7 +101,9 @@ class STFTLoss(nn.Module):
         x_mag = torch.sqrt(torch.clamp(x_stft.real**2 + x_stft.imag**2, min=0.0) + EPS)
         y_mag = torch.sqrt(torch.clamp(y_stft.real**2 + y_stft.imag**2, min=0.0) + EPS)
 
-        sc_loss = torch.norm(y_mag - x_mag, p="fro") / torch.clamp(torch.norm(y_mag, p="fro"), min=EPS)
+        sc_loss = torch.norm(y_mag - x_mag, p="fro") / torch.clamp(
+            torch.norm(y_mag, p="fro"), min=EPS
+        )
         log_mag_loss = F.l1_loss(torch.log(y_mag + EPS), torch.log(x_mag + EPS))
 
         # 2. Complex Loss (Phase/Timing)
@@ -92,14 +124,14 @@ class MultiResolutionSTFTLoss(nn.Module):
         hop_sizes: Optional[List[int]] = None,
         win_lengths: Optional[List[int]] = None,
         window: str = "hann_window",
-        mode: str = "fast"
+        mode: str = "fast",
     ):
         super().__init__()
 
         # Use configuration values from config.py
         if mode == "fast":
             default_fft = STFT_FAST_RESOLUTIONS  # Use config: [512]
-            default_hop = STFT_FAST_HOPS         # Use config: [128]
+            default_hop = STFT_FAST_HOPS  # Use config: [128]
             default_win = STFT_FAST_WIN_LENGTHS  # Use config: [512]
         else:
             default_fft = STFT_QUALITY_RESOLUTIONS
@@ -111,10 +143,9 @@ class MultiResolutionSTFTLoss(nn.Module):
         win_lengths = win_lengths if win_lengths is not None else default_win
 
         assert len(fft_sizes) == len(hop_sizes) == len(win_lengths)
-        self.stft_losses = nn.ModuleList([
-            STFTLoss(fs, hs, wl, window)
-            for fs, hs, wl in zip(fft_sizes, hop_sizes, win_lengths)
-        ])
+        self.stft_losses = nn.ModuleList(
+            [STFTLoss(fs, hs, wl, window) for fs, hs, wl in zip(fft_sizes, hop_sizes, win_lengths)]
+        )
 
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Compute MR-STFT loss with averaging."""

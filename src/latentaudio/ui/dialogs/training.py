@@ -1,23 +1,60 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # training.py - Training configuration dialog with ANTI-COLLAPSE presets
 """Training configuration dialog for setting up model training."""
 
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QGroupBox,
-    QSpinBox, QDoubleSpinBox, QPushButton, QLabel, QDialogButtonBox,
-    QCheckBox
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QFormLayout,
+    QGroupBox,
+    QSpinBox,
+    QDoubleSpinBox,
+    QPushButton,
+    QLabel,
+    QDialogButtonBox,
+    QCheckBox,
 )
 from PyQt6.QtCore import Qt
 
 from ..theme import (
-    BUTTON_STYLE, GROUP_BOX_STYLE, TEXT_SECONDARY, NORMAL_FONT,
-    TITLE_FONT, ACCENT_PRIMARY
+    BUTTON_STYLE,
+    GROUP_BOX_STYLE,
+    TEXT_SECONDARY,
+    NORMAL_FONT,
+    TITLE_FONT,
+    ACCENT_PRIMARY,
 )
 from ...config import (
-    DEFAULT_EPOCHS, DEFAULT_BATCH_SIZE, DEFAULT_LEARNING_RATE,
-    DEFAULT_BETA_KL, DEFAULT_WEIGHT_DECAY, DEFAULT_GRAD_CLIP,
-    DEFAULT_SCHEDULER_PATIENCE, DEFAULT_SCHEDULER_FACTOR,
-    LOG_BATCH_INTERVAL, STFT_LOSS_SKIP_INTERVAL, LATENT_DIM,
-    DEFAULT_GRADIENT_ACCUMULATION_STEPS
+    DEFAULT_EPOCHS,
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_LEARNING_RATE,
+    DEFAULT_BETA_KL,
+    DEFAULT_WEIGHT_DECAY,
+    DEFAULT_GRAD_CLIP,
+    DEFAULT_SCHEDULER_PATIENCE,
+    DEFAULT_SCHEDULER_FACTOR,
+    LOG_BATCH_INTERVAL,
+    STFT_LOSS_SKIP_INTERVAL,
+    LATENT_DIM,
+    DEFAULT_GRADIENT_ACCUMULATION_STEPS,
 )
 
 
@@ -41,8 +78,8 @@ class TrainingDialog(QDialog):
         # Header with dataset info
         header_text = f"Dataset: {self.n_samples} samples loaded"
         if self.resume_from:
-            total_trained = self.resume_from.get('total_epochs_trained', 0)
-            best_loss = self.resume_from.get('best_loss', float('inf'))
+            total_trained = self.resume_from.get("total_epochs_trained", 0)
+            best_loss = self.resume_from.get("best_loss", float("inf"))
             header_text += f"\n\n▶️ CONTINUING TRAINING\nStarting from absolute epoch {total_trained + 1}\nBest previous loss: {best_loss:.6f}"
 
         info_label = QLabel(header_text)
@@ -241,13 +278,13 @@ class TrainingDialog(QDialog):
 
     def apply_preset(self, preset_name: str):
         """Apply ANTI-COLLAPSE preset configurations."""
-        
+
         # ALL PRESETS: Use new anti-collapse defaults
         BASE_LR = DEFAULT_LEARNING_RATE  # 0.0001
         BASE_WD = 0.001
         BASE_GRAD_CLIP = DEFAULT_GRAD_CLIP  # 0.5
         BASE_GRAD_ACCUM = DEFAULT_GRADIENT_ACCUMULATION_STEPS  # 2
-        
+
         if preset_name == "test":
             # Quick smoke test
             self.epochs_spin.setValue(50)
@@ -261,7 +298,7 @@ class TrainingDialog(QDialog):
             self.grad_accum_spin.setValue(BASE_GRAD_ACCUM)
             self.grad_clip_spin.setValue(BASE_GRAD_CLIP)
             self.cyclical_checkbox.setChecked(False)
-            
+
         elif preset_name == "simple":
             # Light training
             self.epochs_spin.setValue(300)
@@ -275,7 +312,7 @@ class TrainingDialog(QDialog):
             self.grad_accum_spin.setValue(BASE_GRAD_ACCUM)
             self.grad_clip_spin.setValue(BASE_GRAD_CLIP)
             self.cyclical_checkbox.setChecked(False)
-            
+
         elif preset_name == "fast":
             # Fast but quality
             self.epochs_spin.setValue(500)
@@ -289,7 +326,7 @@ class TrainingDialog(QDialog):
             self.grad_accum_spin.setValue(BASE_GRAD_ACCUM)
             self.grad_clip_spin.setValue(BASE_GRAD_CLIP)
             self.cyclical_checkbox.setChecked(False)
-            
+
         elif preset_name == "balanced":
             # ⭐ RECOMMENDED DEFAULT
             self.epochs_spin.setValue(1000)
@@ -303,7 +340,7 @@ class TrainingDialog(QDialog):
             self.grad_accum_spin.setValue(BASE_GRAD_ACCUM)
             self.grad_clip_spin.setValue(BASE_GRAD_CLIP)
             self.cyclical_checkbox.setChecked(False)
-            
+
         elif preset_name == "quality":
             # Long high-quality training
             self.epochs_spin.setValue(2000)
@@ -317,7 +354,7 @@ class TrainingDialog(QDialog):
             self.grad_accum_spin.setValue(BASE_GRAD_ACCUM)
             self.grad_clip_spin.setValue(BASE_GRAD_CLIP)
             self.cyclical_checkbox.setChecked(False)
-            
+
         elif preset_name == "diverse":
             # Maximum diversity - highest safe beta
             self.epochs_spin.setValue(1000)
@@ -335,6 +372,7 @@ class TrainingDialog(QDialog):
     def get_config(self):
         """Get training configuration from dialog values."""
         from latentaudio.types import TrainingConfig
+
         return TrainingConfig(
             epochs=self.epochs_spin.value(),
             batch_size=self.batch_spin.value(),
@@ -349,5 +387,5 @@ class TrainingDialog(QDialog):
             stft_skip_interval=self.stft_skip_spin.value(),
             kl_warmup_epochs=self.warmup_spin.value(),
             gradient_accumulation_steps=self.grad_accum_spin.value(),
-            use_cyclical_annealing=self.cyclical_checkbox.isChecked()
+            use_cyclical_annealing=self.cyclical_checkbox.isChecked(),
         )

@@ -1,3 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # interpolator.py - Latent space interpolation utilities
 """Latent space interpolation and morphing utilities."""
 
@@ -20,11 +38,7 @@ class LatentInterpolator:
         logger.debug("LatentInterpolator initialized")
 
     def interpolate(
-        self,
-        z1: LatentVector,
-        z2: LatentVector,
-        n_steps: int = 10,
-        method: str = 'linear'
+        self, z1: LatentVector, z2: LatentVector, n_steps: int = 10, method: str = "linear"
     ) -> List[LatentVector]:
         """
         Interpolate between two latent vectors.
@@ -38,28 +52,22 @@ class LatentInterpolator:
         Returns:
             List of interpolated latent vectors
         """
-        if method == 'linear':
+        if method == "linear":
             return self._linear_interpolate(z1, z2, n_steps)
-        elif method == 'spherical':
+        elif method == "spherical":
             return self._spherical_interpolate(z1, z2, n_steps)
         else:
             raise ValueError(f"Unknown interpolation method: {method}")
 
     def _linear_interpolate(
-        self,
-        z1: LatentVector,
-        z2: LatentVector,
-        n_steps: int
+        self, z1: LatentVector, z2: LatentVector, n_steps: int
     ) -> List[LatentVector]:
         """Linear interpolation between two vectors."""
         alphas = np.linspace(0, 1, n_steps)
         return [z1 * (1 - a) + z2 * a for a in alphas]
 
     def _spherical_interpolate(
-        self,
-        z1: LatentVector,
-        z2: LatentVector,
-        n_steps: int
+        self, z1: LatentVector, z2: LatentVector, n_steps: int
     ) -> List[LatentVector]:
         """
         Spherical linear interpolation (SLERP).
@@ -85,16 +93,10 @@ class LatentInterpolator:
 
         # SLERP formula: sin((1-t)θ)/sin(θ) * z1 + sin(tθ)/sin(θ) * z2
         sin_theta = np.sin(theta)
-        return [
-            (np.sin((1 - a) * theta) * z1 + np.sin(a * theta) * z2) / sin_theta
-            for a in alphas
-        ]
+        return [(np.sin((1 - a) * theta) * z1 + np.sin(a * theta) * z2) / sin_theta for a in alphas]
 
     def morph_sequence(
-        self,
-        points: List[LatentVector],
-        steps_per_segment: int = 10,
-        method: str = 'linear'
+        self, points: List[LatentVector], steps_per_segment: int = 10, method: str = "linear"
     ) -> List[LatentVector]:
         """
         Create a morphing sequence through multiple points.
@@ -114,10 +116,7 @@ class LatentInterpolator:
 
         for i in range(len(points) - 1):
             segment = self.interpolate(
-                points[i],
-                points[i + 1],
-                n_steps=steps_per_segment,
-                method=method
+                points[i], points[i + 1], n_steps=steps_per_segment, method=method
             )
 
             # Avoid duplicating points between segments

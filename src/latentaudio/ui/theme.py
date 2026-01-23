@@ -1,3 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # theme.py - UI theme and styling constants
 """UI theme constants and styling for LatentAudio."""
 
@@ -14,11 +32,11 @@ BG_MEDIUM = QColor(45, 45, 45)
 BG_LIGHT = QColor(60, 60, 60)
 
 # Accent colors
-ACCENT_PRIMARY = QColor(74, 158, 255)    # Blue
-ACCENT_SECONDARY = QColor(138, 173, 244) # Light blue
-ACCENT_SUCCESS = QColor(76, 175, 80)     # Green
-ACCENT_WARNING = QColor(255, 152, 0)     # Orange
-ACCENT_ERROR = QColor(244, 67, 54)       # Red
+ACCENT_PRIMARY = QColor(74, 158, 255)  # Blue
+ACCENT_SECONDARY = QColor(138, 173, 244)  # Light blue
+ACCENT_SUCCESS = QColor(76, 175, 80)  # Green
+ACCENT_WARNING = QColor(255, 152, 0)  # Orange
+ACCENT_ERROR = QColor(244, 67, 54)  # Red
 
 # Text colors
 TEXT_PRIMARY = QColor(255, 255, 255)
@@ -56,12 +74,14 @@ FONT_SIZE_TITLE = 16
 # FONTS
 # ============================================================================
 
+
 def get_font(size: int = FONT_SIZE_NORMAL, bold: bool = False) -> QFont:
     """Get application font with specified size and weight."""
     font = QFont("Segoe UI", size)
     if bold:
         font.setBold(True)
     return font
+
 
 TITLE_FONT = get_font(FONT_SIZE_TITLE, bold=True)
 NORMAL_FONT = get_font(FONT_SIZE_NORMAL)

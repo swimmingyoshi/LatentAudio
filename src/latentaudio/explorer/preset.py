@@ -1,3 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # preset.py - Preset management with JSON storage
 """Preset management with JSON-based persistence."""
 
@@ -46,7 +64,7 @@ class PresetManager:
             return
 
         try:
-            with open(self.presets_file, 'r', encoding='utf-8') as f:
+            with open(self.presets_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             presets = {}
@@ -69,7 +87,7 @@ class PresetManager:
         try:
             data = {name: preset.to_dict() for name, preset in self.presets.items()}
 
-            with open(self.presets_file, 'w', encoding='utf-8') as f:
+            with open(self.presets_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
             logger.debug(f"Saved {len(self.presets)} presets to {self.presets_file}")
@@ -82,7 +100,7 @@ class PresetManager:
         name: str,
         latent_vector: LatentVector,
         description: str = "",
-        tags: Optional[List[str]] = None
+        tags: Optional[List[str]] = None,
     ) -> None:
         """
         Save a latent vector as a preset.
@@ -101,7 +119,7 @@ class PresetManager:
             latent_vector=latent_vector.copy(),
             description=description,
             tags=tags or [],
-            created_at=datetime.now().isoformat()
+            created_at=datetime.now().isoformat(),
         )
 
         self.presets[name] = preset
@@ -147,7 +165,7 @@ class PresetManager:
             latent_vector=preset.latent_vector.copy(),
             description=preset.description,
             tags=preset.tags.copy(),
-            created_at=preset.created_at
+            created_at=preset.created_at,
         )
 
     def delete_preset(self, name: str) -> bool:
@@ -189,17 +207,12 @@ class PresetManager:
         Returns:
             List of preset names with the tag
         """
-        matching = [
-            name for name, preset in self.presets.items()
-            if tag in preset.tags
-        ]
+        matching = [name for name, preset in self.presets.items() if tag in preset.tags]
         logger.debug(f"Found {len(matching)} presets with tag '{tag}'")
         return matching
 
     def find_similar_presets(
-        self,
-        latent_vector: LatentVector,
-        n: int = 5
+        self, latent_vector: LatentVector, n: int = 5
     ) -> List[tuple[str, float]]:
         """
         Find presets most similar to a given latent vector.
@@ -233,7 +246,7 @@ class PresetManager:
         """
         data = {name: preset.to_dict() for name, preset in self.presets.items()}
 
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
         logger.info(f"Exported {len(self.presets)} presets to {filepath}")
@@ -249,7 +262,7 @@ class PresetManager:
         Returns:
             Number of presets imported
         """
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         imported_count = 0

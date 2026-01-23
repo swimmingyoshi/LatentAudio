@@ -1,3 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# LatentAudio - Direct Neural Audio Generation and Exploration
+# Copyright (C) 2024 LatentAudio Team
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 # cli.py - Command-line interface for LatentAudio
 """Command-line interface for LatentAudio operations."""
 
@@ -28,40 +46,41 @@ def load_config_from_file(filepath: Path) -> dict:
     if not filepath.exists():
         raise click.BadParameter(f"Configuration file not found: {filepath}")
 
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         return json.load(f)
 
 
 def create_generator_from_config(config_data: dict) -> AdvancedAudioGenerator:
     """Create generator from configuration dictionary."""
     # Handle both old and new config formats
-    if 'sample_rate' in config_data:
+    if "sample_rate" in config_data:
         # Legacy format
         config = GeneratorConfig(
-            sample_rate=config_data['sample_rate'],
-            duration=config_data.get('duration', 0.5),
-            latent_dim=config_data.get('latent_dim', 128),
-            device=config_data.get('device')
+            sample_rate=config_data["sample_rate"],
+            duration=config_data.get("duration", 0.5),
+            latent_dim=config_data.get("latent_dim", 128),
+            device=config_data.get("device"),
         )
     else:
         # New nested format
-        audio_data = config_data.get('audio', {})
-        model_data = config_data.get('model', {})
-        device_data = config_data.get('device', {})
+        audio_data = config_data.get("audio", {})
+        model_data = config_data.get("model", {})
+        device_data = config_data.get("device", {})
 
         config = GeneratorConfig(
             audio=AudioConfig(**audio_data),
             model=ModelConfig(**model_data),
-            device=DeviceConfig(**device_data)
+            device=DeviceConfig(**device_data),
         )
 
     return AdvancedAudioGenerator(config)
 
 
 @click.group()
-@click.option('--verbose', '-v', is_flag=True, help='Enable verbose logging')
-@click.option('--config', '-c', type=click.Path(exists=True, path_type=Path),
-              help='Configuration file (JSON)')
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging")
+@click.option(
+    "--config", "-c", type=click.Path(exists=True, path_type=Path), help="Configuration file (JSON)"
+)
 @click.pass_context
 def cli(ctx, verbose, config):
     """LatentAudio: Direct Neural Audio Generation and Exploration.
@@ -74,37 +93,44 @@ def cli(ctx, verbose, config):
     # Store config for subcommands
     ctx.ensure_object(dict)
     if config:
-        ctx.obj['config'] = load_config_from_file(config)
+        ctx.obj["config"] = load_config_from_file(config)
     else:
-        ctx.obj['config'] = None
+        ctx.obj["config"] = None
 
     logger.info("LatentAudio CLI initialized")
 
 
 @cli.command()
-@click.argument('data_dir', type=click.Path(exists=True, path_type=Path))
-@click.option('--output', '-o', type=click.Path(path_type=Path),
-              default=DEFAULT_MODELS_DIR / 'trained_model.pth',
-              help='Output model path')
-@click.option('--epochs', '-e', type=int, default=300,
-              help='Number of training epochs')
-@click.option('--batch-size', '-b', type=int, default=16,
-              help='Batch size for training')
-@click.option('--lr', type=float, default=0.0003,
-              help='Learning rate')
-@click.option('--latent-dim', '-l', type=int, default=128,
-              help='Latent dimension size')
-@click.option('--sample-rate', '-r', type=int, default=44100,
-              help='Audio sample rate')
-@click.option('--duration', '-d', type=float, default=0.5,
-              help='Audio duration in seconds')
-@click.option('--device', type=str, default='auto',
-              help='Device to use (cpu, cuda, auto)')
-@click.option('--tensorboard', is_flag=True,
-              help='Launch TensorBoard after training')
+@click.argument("data_dir", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(path_type=Path),
+    default=DEFAULT_MODELS_DIR / "trained_model.pth",
+    help="Output model path",
+)
+@click.option("--epochs", "-e", type=int, default=300, help="Number of training epochs")
+@click.option("--batch-size", "-b", type=int, default=16, help="Batch size for training")
+@click.option("--lr", type=float, default=0.0003, help="Learning rate")
+@click.option("--latent-dim", "-l", type=int, default=128, help="Latent dimension size")
+@click.option("--sample-rate", "-r", type=int, default=44100, help="Audio sample rate")
+@click.option("--duration", "-d", type=float, default=0.5, help="Audio duration in seconds")
+@click.option("--device", type=str, default="auto", help="Device to use (cpu, cuda, auto)")
+@click.option("--tensorboard", is_flag=True, help="Launch TensorBoard after training")
 @click.pass_context
-def train(ctx, data_dir, output, epochs, batch_size, lr, latent_dim,
-          sample_rate, duration, device, tensorboard):
+def train(
+    ctx,
+    data_dir,
+    output,
+    epochs,
+    batch_size,
+    lr,
+    latent_dim,
+    sample_rate,
+    duration,
+    device,
+    tensorboard,
+):
     """Train a new VAE model on audio data.
 
     DATA_DIR should contain WAV/MP3/FLAC audio files to train on.
@@ -112,14 +138,14 @@ def train(ctx, data_dir, output, epochs, batch_size, lr, latent_dim,
     logger.info(f"Starting training with data from: {data_dir}")
 
     # Create generator
-    if ctx.obj['config']:
-        generator = create_generator_from_config(ctx.obj['config'])
+    if ctx.obj["config"]:
+        generator = create_generator_from_config(ctx.obj["config"])
     else:
         config = GeneratorConfig(
             sample_rate=sample_rate,
             duration=duration,
             latent_dim=latent_dim,
-            device=device if device != 'auto' else None
+            device=device if device != "auto" else None,
         )
         generator = AdvancedAudioGenerator(config)
 
@@ -134,9 +160,7 @@ def train(ctx, data_dir, output, epochs, batch_size, lr, latent_dim,
 
     # Create training config
     train_config = TrainingConfig(
-        epochs=epochs,
-        batch_size=min(batch_size, len(samples)),
-        learning_rate=lr
+        epochs=epochs, batch_size=min(batch_size, len(samples)), learning_rate=lr
     )
 
     # Train model
@@ -162,16 +186,21 @@ def train(ctx, data_dir, output, epochs, batch_size, lr, latent_dim,
 
 
 @cli.command()
-@click.argument('model_path', type=click.Path(exists=True, path_type=Path))
-@click.option('--output-dir', '-o', type=click.Path(path_type=Path),
-              default=Path('generated_audio'),
-              help='Output directory for generated audio')
-@click.option('--count', '-n', type=int, default=10,
-              help='Number of audio files to generate')
-@click.option('--temperature', '-t', type=float, default=1.0,
-              help='Generation temperature (randomness)')
-@click.option('--prefix', '-p', type=str, default='generated',
-              help='Filename prefix for generated audio')
+@click.argument("model_path", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--output-dir",
+    "-o",
+    type=click.Path(path_type=Path),
+    default=Path("generated_audio"),
+    help="Output directory for generated audio",
+)
+@click.option("--count", "-n", type=int, default=10, help="Number of audio files to generate")
+@click.option(
+    "--temperature", "-t", type=float, default=1.0, help="Generation temperature (randomness)"
+)
+@click.option(
+    "--prefix", "-p", type=str, default="generated", help="Filename prefix for generated audio"
+)
 @click.pass_context
 def generate(ctx, model_path, output_dir, count, temperature, prefix):
     """Generate audio using a trained model.
@@ -181,8 +210,8 @@ def generate(ctx, model_path, output_dir, count, temperature, prefix):
     logger.info(f"Loading model from: {model_path}")
 
     # Create generator and load model
-    if ctx.obj['config']:
-        generator = create_generator_from_config(ctx.obj['config'])
+    if ctx.obj["config"]:
+        generator = create_generator_from_config(ctx.obj["config"])
     else:
         generator = AdvancedAudioGenerator()
 
@@ -195,10 +224,7 @@ def generate(ctx, model_path, output_dir, count, temperature, prefix):
     # Generate audio
     logger.info(f"Generating {count} audio samples...")
 
-    audios = generator.generate_random(
-        n_samples=count,
-        config={'temperature': temperature}
-    )
+    audios = generator.generate_random(n_samples=count, config={"temperature": temperature})
 
     # Save audio files
     for i, audio in enumerate(tqdm(audios, desc="Saving audio")):
@@ -211,12 +237,17 @@ def generate(ctx, model_path, output_dir, count, temperature, prefix):
 
 
 @cli.command()
-@click.argument('model_path', type=click.Path(exists=True, path_type=Path))
-@click.option('--vectors', '-v', type=str, required=True,
-              help='Latent vectors as JSON array or file path')
-@click.option('--output', '-o', type=click.Path(path_type=Path),
-              default=Path('latent_audio.wav'),
-              help='Output audio file path')
+@click.argument("model_path", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--vectors", "-v", type=str, required=True, help="Latent vectors as JSON array or file path"
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(path_type=Path),
+    default=Path("latent_audio.wav"),
+    help="Output audio file path",
+)
 @click.pass_context
 def synthesize(ctx, model_path, vectors, output):
     """Synthesize audio from specific latent vectors.
@@ -227,8 +258,8 @@ def synthesize(ctx, model_path, vectors, output):
     logger.info(f"Loading model from: {model_path}")
 
     # Create generator and load model
-    if ctx.obj['config']:
-        generator = create_generator_from_config(ctx.obj['config'])
+    if ctx.obj["config"]:
+        generator = create_generator_from_config(ctx.obj["config"])
     else:
         generator = AdvancedAudioGenerator()
 
@@ -236,20 +267,20 @@ def synthesize(ctx, model_path, vectors, output):
 
     # Parse latent vectors
     try:
-        if vectors.startswith('['):  # JSON array
+        if vectors.startswith("["):  # JSON array
             z = np.array(json.loads(vectors))
         else:  # File path
             vector_file = Path(vectors)
             if not vector_file.exists():
                 raise click.BadParameter(f"Vector file not found: {vectors}")
 
-            with open(vector_file, 'r') as f:
+            with open(vector_file, "r") as f:
                 data = json.load(f)
 
             if isinstance(data, list):
                 z = np.array(data)
-            elif isinstance(data, dict) and 'latent_vector' in data:
-                z = np.array(data['latent_vector'])
+            elif isinstance(data, dict) and "latent_vector" in data:
+                z = np.array(data["latent_vector"])
             else:
                 raise click.BadParameter("Invalid vector file format")
 
@@ -258,9 +289,7 @@ def synthesize(ctx, model_path, vectors, output):
 
     # Validate vector dimensions
     if z.ndim != 1 or z.shape[0] != generator.config.latent_dim:
-        raise click.BadParameter(
-            f"Expected {generator.config.latent_dim}D vector, got {z.shape}"
-        )
+        raise click.BadParameter(f"Expected {generator.config.latent_dim}D vector, got {z.shape}")
 
     # Generate audio
     logger.info("Generating audio from latent vector...")
@@ -275,29 +304,22 @@ def synthesize(ctx, model_path, vectors, output):
 
 
 @cli.command()
-@click.argument('model_path', type=click.Path(exists=True, path_type=Path))
-@click.option('--preset-name', '-p', type=str,
-              help='Preset name to save/load')
-@click.option('--latent-vector', '-v', type=str,
-              help='Latent vector as JSON array (for saving)')
-@click.option('--description', type=str,
-              help='Preset description')
-@click.option('--tags', type=str,
-              help='Comma-separated preset tags')
-@click.option('--list', 'list_presets', is_flag=True,
-              help='List all presets')
-@click.option('--find-tag', type=str,
-              help='Find presets with specific tag')
+@click.argument("model_path", type=click.Path(exists=True, path_type=Path))
+@click.option("--preset-name", "-p", type=str, help="Preset name to save/load")
+@click.option("--latent-vector", "-v", type=str, help="Latent vector as JSON array (for saving)")
+@click.option("--description", type=str, help="Preset description")
+@click.option("--tags", type=str, help="Comma-separated preset tags")
+@click.option("--list", "list_presets", is_flag=True, help="List all presets")
+@click.option("--find-tag", type=str, help="Find presets with specific tag")
 @click.pass_context
-def presets(ctx, model_path, preset_name, latent_vector, description,
-            tags, list_presets, find_tag):
+def presets(ctx, model_path, preset_name, latent_vector, description, tags, list_presets, find_tag):
     """Manage model presets.
 
     MODEL_PATH should point to a trained .pth model file.
     """
     # Create generator and load model
-    if ctx.obj['config']:
-        generator = create_generator_from_config(ctx.obj['config'])
+    if ctx.obj["config"]:
+        generator = create_generator_from_config(ctx.obj["config"])
     else:
         generator = AdvancedAudioGenerator()
 
@@ -313,7 +335,11 @@ def presets(ctx, model_path, preset_name, latent_vector, description,
         click.echo("Available presets:")
         for name in presets:
             info = generator.get_preset_info(name)
-            desc = info.description[:50] + "..." if info.description and len(info.description) > 50 else info.description
+            desc = (
+                info.description[:50] + "..."
+                if info.description and len(info.description) > 50
+                else info.description
+            )
             tags_str = ", ".join(info.tags) if info.tags else "no tags"
             click.echo(f"  • {name}: {desc or 'no description'} [{tags_str}]")
 
@@ -332,13 +358,10 @@ def presets(ctx, model_path, preset_name, latent_vector, description,
         # Save preset
         try:
             z = np.array(json.loads(latent_vector))
-            tag_list = [t.strip() for t in tags.split(',')] if tags else None
+            tag_list = [t.strip() for t in tags.split(",")] if tags else None
 
             generator.save_preset(
-                name=preset_name,
-                latent_vector=z,
-                description=description,
-                tags=tag_list
+                name=preset_name, latent_vector=z, description=description, tags=tag_list
             )
 
             click.echo(f"✅ Preset '{preset_name}' saved")
@@ -360,20 +383,19 @@ def presets(ctx, model_path, preset_name, latent_vector, description,
 
 
 @cli.command()
-@click.argument('model_path', type=click.Path(exists=True, path_type=Path))
-@click.option('--output', '-o', type=click.Path(path_type=Path),
-              default=Path('latent_walk.wav'),
-              help='Output audio file path')
-@click.option('--steps', '-s', type=int, default=8,
-              help='Number of walk steps')
-@click.option('--step-size', type=float, default=0.4,
-              help='Size of each step')
-@click.option('--momentum', type=float, default=0.5,
-              help='Persistence of direction (0.0 to 1.0)')
-@click.option('--origin-pull', type=float, default=0.1,
-              help='Subtle pull toward the center')
-@click.option('--start-preset', type=str,
-              help='Starting preset name')
+@click.argument("model_path", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(path_type=Path),
+    default=Path("latent_walk.wav"),
+    help="Output audio file path",
+)
+@click.option("--steps", "-s", type=int, default=8, help="Number of walk steps")
+@click.option("--step-size", type=float, default=0.4, help="Size of each step")
+@click.option("--momentum", type=float, default=0.5, help="Persistence of direction (0.0 to 1.0)")
+@click.option("--origin-pull", type=float, default=0.1, help="Subtle pull toward the center")
+@click.option("--start-preset", type=str, help="Starting preset name")
 @click.pass_context
 def walk(ctx, model_path, output, steps, step_size, momentum, origin_pull, start_preset):
     """Generate a random walk through latent space.
@@ -383,8 +405,8 @@ def walk(ctx, model_path, output, steps, step_size, momentum, origin_pull, start
     logger.info(f"Loading model from: {model_path}")
 
     # Create generator and load model
-    if ctx.obj['config']:
-        generator = create_generator_from_config(ctx.obj['config'])
+    if ctx.obj["config"]:
+        generator = create_generator_from_config(ctx.obj["config"])
     else:
         generator = AdvancedAudioGenerator()
 
@@ -407,7 +429,7 @@ def walk(ctx, model_path, output, steps, step_size, momentum, origin_pull, start
         n_steps=steps,
         step_size=step_size,
         momentum=momentum,
-        origin_pull=origin_pull
+        origin_pull=origin_pull,
     )
 
     # Generate audio for each step
@@ -436,12 +458,10 @@ def walk(ctx, model_path, output, steps, step_size, momentum, origin_pull, start
 
 
 @cli.command()
-@click.argument('input_model', type=click.Path(exists=True, path_type=Path))
-@click.argument('output_model', type=click.Path(path_type=Path))
-@click.option('--optimize', is_flag=True,
-              help='Apply TorchScript optimization')
-@click.option('--quantize', type=click.Choice(['dynamic', 'static']),
-              help='Apply quantization')
+@click.argument("input_model", type=click.Path(exists=True, path_type=Path))
+@click.argument("output_model", type=click.Path(path_type=Path))
+@click.option("--optimize", is_flag=True, help="Apply TorchScript optimization")
+@click.option("--quantize", type=click.Choice(["dynamic", "static"]), help="Apply quantization")
 @click.pass_context
 def convert(ctx, input_model, output_model, optimize, quantize):
     """Convert and optimize models for deployment.
@@ -452,8 +472,8 @@ def convert(ctx, input_model, output_model, optimize, quantize):
     logger.info(f"Converting model: {input_model} -> {output_model}")
 
     # Create generator and load model
-    if ctx.obj['config']:
-        generator = create_generator_from_config(ctx.obj['config'])
+    if ctx.obj["config"]:
+        generator = create_generator_from_config(ctx.obj["config"])
     else:
         generator = AdvancedAudioGenerator()
 
@@ -473,6 +493,7 @@ def convert(ctx, input_model, output_model, optimize, quantize):
 
     # For now, just copy the model (placeholder)
     import shutil
+
     output_model.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(input_model, output_model)
 
@@ -481,13 +502,14 @@ def convert(ctx, input_model, output_model, optimize, quantize):
 
 
 @cli.command()
-@click.option('--port', type=int, default=6006,
-              help='TensorBoard port')
-@click.option('--host', type=str, default='localhost',
-              help='TensorBoard host')
-@click.option('--logdir', type=click.Path(path_type=Path),
-              default=DEFAULT_MODELS_DIR,
-              help='Log directory to serve')
+@click.option("--port", type=int, default=6006, help="TensorBoard port")
+@click.option("--host", type=str, default="localhost", help="TensorBoard host")
+@click.option(
+    "--logdir",
+    type=click.Path(path_type=Path),
+    default=DEFAULT_MODELS_DIR,
+    help="Log directory to serve",
+)
 def tensorboard(port, host, logdir):
     """Launch TensorBoard server.
 
