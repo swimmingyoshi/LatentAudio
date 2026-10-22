@@ -1,2 +1,5 @@
 __pycache__
 .mypy_cache
+
+# Removed from history on 2026-10-21; keep out of commits
+logs/
