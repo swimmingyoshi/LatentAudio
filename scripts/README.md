@@ -10,6 +10,10 @@ Utilities for data preprocessing, training diagnostics, model verification, and 
 *   **`diagnose_data.py`**: Thoroughly checks datasets for NaNs, Infs, normalization issues, clipping, and DC offsets before training.
 *   **`prepare_dataset.py`**: Advanced DSP pipeline for phase-locked transient alignment, peak normalization, and polarity correction.
 *   **`cleanup_silent_files.py`**: Recursively removes silent segments from preprocessed datasets using configurable RMS thresholds.
+*   **`download_esc50.py`**: Downloads and extracts the ESC-50 environmental sound dataset.
+*   **`preprocess_esc50.py`**: Slices ESC-50 5s clips into 0.5s training segments.
+*   **`preprocess_kicks.py`**: Normalizes kick drum samples to exactly 1.0s.
+*   **`preprocess_synths.py`**: Extracts the first 1.0s of synth samples for training.
 
 ## 📈 Training Monitoring & Log Analysis
 
@@ -32,3 +36,22 @@ Utilities for data preprocessing, training diagnostics, model verification, and 
 *   **`deep_clean_v3.py`**: The "No-Cheat" Fidelity Bridge. Forces training using hallucinated skips to ensure zero discrepancy between training and generation.
 *   **`identify_latent_attributes.py`**: Correlates latent dimensions with mathematical audio features (Brightness, Noisiness, etc.).
 *   **`test_walk_geometry.py`**: Benchmarks latent space exploration efficiency (Momentum Walk vs. Random Walk).
+
+## 🎛️ Exporting a Model to the VST
+
+The pipeline from a trained checkpoint to a folder the LatentAudioVST plugin can load:
+
+```bash
+# 1. Strip training state -> writes MyModel_PRUNED_FP32.pth and MyModel_PRUNED_FP16.pth next to it
+python scripts/prune_model.py path/to/MyModel.pth
+
+# 2. (optional) Benchmark load time / decode latency
+python scripts/test_pruned_models.py --fp32 path/to/MyModel_PRUNED_FP32.pth --fp16 path/to/MyModel_PRUNED_FP16.pth
+
+# 3. Export the decoder to ONNX + build the 2D sound map
+python scripts/export_for_vst.py path/to/MyModel_PRUNED_FP16.pth -o path/to/MyModelVST
+```
+
+Then click **Load Model Folder** in the plugin and pick the output folder; it contains `latent_decoder.onnx` and `sound_map.json`.
+
+*   **`benchmark_inference.py`**: Measures model load time and decode speed for a checkpoint.

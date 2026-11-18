@@ -139,7 +139,7 @@ def summarize_logs(log_dir, output_file='TRAINING_SUMMARY.md'):
 
 if __name__ == "__main__":
     # Ensure we are in the project root
-    project_root = r'B:\Coding Projects\++\Neuro\LatentAudio'
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.chdir(project_root)
     
     latest_dir = get_latest_log_dir()

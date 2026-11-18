@@ -1,20 +1,16 @@
+import argparse
 import torch
 import time
 import sys
-import os
 from pathlib import Path
 
-# Ensure we can import from src
-sys.path.append(os.path.join(os.getcwd(), "src"))
+# Ensure we can import from src regardless of the current working directory
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from latentaudio.core.generator import AdvancedAudioGenerator
 
-MODELS = {
-    "FP32": r"B:\Coding Projects\++\Neuro\LatentAudio\TestModels\VVV-Y1_PRUNED_FP32.pth",
-    "FP16": r"B:\Coding Projects\++\Neuro\LatentAudio\TestModels\VVV-Y1_PRUNED_FP16.pth"
-}
 
-def test_inference():
+def test_inference(MODELS: dict):
     # Force fresh init
     gen = AdvancedAudioGenerator()
     
@@ -70,4 +66,13 @@ def test_inference():
             print(f"Approx. VRAM Usage: {vram:.2f} MB")
 
 if __name__ == "__main__":
-    test_inference()
+    parser = argparse.ArgumentParser(
+        description="Benchmark load time and decode latency of pruned checkpoints (from prune_model.py)."
+    )
+    parser.add_argument("--fp32", type=Path, help="Path to the *_PRUNED_FP32.pth checkpoint")
+    parser.add_argument("--fp16", type=Path, help="Path to the *_PRUNED_FP16.pth checkpoint")
+    args = parser.parse_args()
+    models = {name: str(p) for name, p in (("FP32", args.fp32), ("FP16", args.fp16)) if p}
+    if not models:
+        parser.error("pass at least one of --fp32 / --fp16")
+    test_inference(models)

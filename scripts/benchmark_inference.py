@@ -1,14 +1,15 @@
+import argparse
 import torch
 import time
-import os
 import sys
+from pathlib import Path
 
-# Ensure we can import from src
-sys.path.append(os.path.join(os.getcwd(), "src"))
+# Ensure we can import from src regardless of the current working directory
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from latentaudio.core.generator import AdvancedAudioGenerator
 
-MODEL_PATH = r"B:\Coding Projects\++\Neuro\LatentAudio\TestModels\VVV-Y1_MAPPED.pth"
+MODEL_PATH = None  # set from the command line
 
 def benchmark():
     print(f"Loading model from {MODEL_PATH}...")
@@ -75,4 +76,7 @@ def benchmark():
     print(f"CPU RTF: {1.0/cpu_time:.1f}x (Real-time Factor)")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Benchmark model load time and decode speed.")
+    parser.add_argument("model", help="Path to a .pth checkpoint")
+    MODEL_PATH = parser.parse_args().model
     benchmark()

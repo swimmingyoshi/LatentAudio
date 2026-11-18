@@ -1,11 +1,11 @@
+import argparse
 import torch
-import os
 from pathlib import Path
 
-def prune_model():
-    source = Path(r"B:\Coding Projects\++\Neuro\LatentAudio\TestModels\VVV-Y1_MAPPED.pth")
-    target_fp32 = Path(r"B:\Coding Projects\++\Neuro\LatentAudio\TestModels\VVV-Y1_PRUNED_FP32.pth")
-    target_fp16 = Path(r"B:\Coding Projects\++\Neuro\LatentAudio\TestModels\VVV-Y1_PRUNED_FP16.pth")
+def prune_model(source: Path):
+    """Strip training state from a checkpoint; writes <name>_PRUNED_FP32.pth and _FP16.pth next to it."""
+    target_fp32 = source.with_name(f"{source.stem}_PRUNED_FP32.pth")
+    target_fp16 = source.with_name(f"{source.stem}_PRUNED_FP16.pth")
 
     if not source.exists():
         print(f"Error: Source model not found at {source}")
@@ -67,4 +67,8 @@ def prune_model():
     print("Original file preserved.")
 
 if __name__ == "__main__":
-    prune_model()
+    parser = argparse.ArgumentParser(
+        description="Prune a training checkpoint down to inference keys and save FP32 + FP16 copies."
+    )
+    parser.add_argument("model", type=Path, help="Path to the full training checkpoint (.pth)")
+    prune_model(parser.parse_args().model)

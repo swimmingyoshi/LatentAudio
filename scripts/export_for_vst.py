@@ -1,24 +1,19 @@
 import torch
 import torch.nn as nn
 import numpy as np
+import argparse
 import json
-import os
-from pathlib import Path
-from sklearn.decomposition import PCA
-
-# Ensure we can import from src
 import sys
-sys.path.append(os.path.join(os.getcwd(), "src"))
+from pathlib import Path
 
-from latentaudio.core.generator import AdvancedAudioGenerator
+# Ensure we can import from src regardless of the current working directory
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
 from latentaudio.core.simple_vae import SimpleFastVAE
 
-SOURCE_MODEL = r"B:\Coding Projects\++\Neuro\LatentAudio\TestModels\VVV-Y1_PRUNED_FP16.pth"
-# Updated EXPORT_DIR to point to the NeuroClone VST source folder
-EXPORT_DIR = Path(r"B:\Coding Projects\++\NeuroClone\LatentAudioVST\Source\VST_Export")
-EXPORT_DIR.mkdir(exist_ok=True, parents=True)
 
-def export():
+def export(SOURCE_MODEL: Path, EXPORT_DIR: Path):
+    EXPORT_DIR.mkdir(exist_ok=True, parents=True)
     print(f"Loading pruned model: {SOURCE_MODEL}...")
     ckpt = torch.load(SOURCE_MODEL, map_location="cpu", weights_only=False)
     
@@ -133,4 +128,16 @@ def export():
     print("="*40)
 
 if __name__ == "__main__":
-    export()
+    parser = argparse.ArgumentParser(
+        description="Export a (pruned) LatentAudio checkpoint to an ONNX decoder + sound_map.json "
+        "folder that the LatentAudioVST plugin can load."
+    )
+    parser.add_argument("model", type=Path, help="Path to the .pth checkpoint (ideally the pruned FP16 one)")
+    parser.add_argument(
+        "-o", "--out", type=Path, default=Path("vst_export"),
+        help="Output folder for latent_decoder.onnx and sound_map.json (default: ./vst_export)",
+    )
+    args = parser.parse_args()
+    if not args.model.exists():
+        parser.error(f"model not found: {args.model}")
+    export(args.model, args.out)
