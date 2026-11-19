@@ -30,7 +30,7 @@ CATEGORIES = [
     ("cymbal", _words("cymbals?", "crash", "ride")),
     ("perc", _words("percs?", "percussion", "toms?", "shakers?", "conga", "bongo", "tamb\\w*", "cowbell")),
     ("guitar", _words("guitars?", "gtrs?", "strums?", "strummed", "nylon", "banjo", "ukulele", "sitar", "mandolin")),
-    ("strings", _words("strings?", "violins?", "viola", "cello", "pizz\\w*", "orchestra\\w*", "contrabass")),
+    ("strings", _words("strings?", "violins?", "viola", "cello", "pizz\\w*", "orchestra\\w*", "contrabass", "double[ -]?bass")),
     ("keys", _words("piano", "keys", "rhodes", "organ", "e-?piano", "wurli\\w*", "clav\\w*")),
     ("bell", _words("bells?", "chimes?", "glock\\w*", "marimba", "mallets?", "kalimba")),
     ("pluck", _words("plucks?", "plucked")),

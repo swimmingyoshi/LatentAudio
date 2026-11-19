@@ -31,7 +31,9 @@ SR = 44100
 def scan(sources):
     for root in sources:
         for path in root.rglob("*"):
-            if path.suffix.lower() in AUDIO_EXTENSIONS and path.is_file():
+            # skip macOS resource-fork files ("._x.wav") that ship inside zips
+            if (path.suffix.lower() in AUDIO_EXTENSIONS and path.is_file()
+                    and not path.name.startswith("._") and "__MACOSX" not in path.parts):
                 yield root, path
 
 
@@ -192,7 +194,7 @@ def main():
         pitched = [m for m in manifest if "midi" in m]
         print(f"pitched: {len(pitched)}/{len(manifest)}")
         if pitched:
-            notes = collections.Counter(librosa.midi_to_note(m["midi"]) for m in pitched)
+            notes = collections.Counter(librosa.midi_to_note(m["midi"], unicode=False) for m in pitched)
             print("notes:", dict(sorted(notes.items(), key=lambda kv: librosa.note_to_midi(kv[0]))))
 
 

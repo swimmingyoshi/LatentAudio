@@ -33,6 +33,7 @@ def main():
     ap.add_argument("--out", type=Path, required=True, help="Run directory (checkpoints, history, cache)")
     ap.add_argument("--preset", choices=sorted(PRESETS), default="base")
     ap.add_argument("--latent-dim", type=int, default=128)
+    ap.add_argument("--seconds", type=float, default=1.0, help="Sound length (use ~2 for sustained instruments)")
     ap.add_argument("--epochs", type=int, default=600)
     ap.add_argument("--batch-size", type=int, default=16)
     ap.add_argument("--lr", type=float, default=4e-4)
@@ -50,12 +51,12 @@ def main():
         audio, labels = d["audio"], list(d["labels"])
         print(f"Loaded {len(audio)} sounds from cache")
     else:
-        audio, labels = load_folder(args.data)
+        audio, labels = load_folder(args.data, length=int(args.seconds * 44100))
         np.savez(cache, audio=audio, labels=np.array(labels))
 
     train_idx, val_idx = split_indices(len(audio), args.val_fraction)
     (args.out / "val_labels.json").write_text(json.dumps([labels[i] for i in val_idx], indent=1))
-    mcfg = V2Config(latent_dim=args.latent_dim, **PRESETS[args.preset])
+    mcfg = V2Config(latent_dim=args.latent_dim, length=audio.shape[1], **PRESETS[args.preset])
     tcfg = TrainConfig(epochs=args.epochs, batch_size=args.batch_size, lr=args.lr, beta_kl=args.beta, w_env=args.w_env,
                        val_fraction=args.val_fraction, eval_every=args.eval_every)
     (args.out / "config.json").write_text(json.dumps({"model": mcfg.to_dict(), "train": tcfg.to_dict(),
