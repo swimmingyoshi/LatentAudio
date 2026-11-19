@@ -123,6 +123,18 @@ class TrainingDialog(QDialog):
         model_group.setStyleSheet(GROUP_BOX_STYLE)
         model_layout = QFormLayout()
 
+        from PyQt6.QtWidgets import QComboBox
+
+        self.model_type_combo = QComboBox()
+        self.model_type_combo.addItem("v2 - spectral, small & fast (recommended)", "v2")
+        self.model_type_combo.addItem("v1 - legacy U-Net (1 GB export)", "simple")
+        self.model_type_combo.setToolTip(
+            "Only applies to a new model; a loaded model keeps its architecture.
+"
+            "v2 trains faster, exports a ~40 MB VST decoder and decodes several times faster."
+        )
+        model_layout.addRow("Model Type:", self.model_type_combo)
+
         self.latent_dim_spin = QSpinBox()
         self.latent_dim_spin.setRange(8, 128)
         self.latent_dim_spin.setValue(LATENT_DIM)
@@ -368,6 +380,9 @@ class TrainingDialog(QDialog):
             self.grad_accum_spin.setValue(BASE_GRAD_ACCUM)
             self.grad_clip_spin.setValue(BASE_GRAD_CLIP)
             self.cyclical_checkbox.setChecked(True)  # Enable cyclical annealing
+
+    def model_type(self) -> str:
+        return self.model_type_combo.currentData()
 
     def get_config(self):
         """Get training configuration from dialog values."""

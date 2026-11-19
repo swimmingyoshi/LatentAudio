@@ -10,10 +10,7 @@ readme = "README.md"
 license = {text = "AGPL-3.0"}
 requires-python = ">=3.10"
 authors = [
-    {name = "LatentAudio Team", email = "team@latentaudio.dev"},
-]
-maintainers = [
-    {name = "LatentAudio Team", email = "team@latentaudio.dev"},
+    {name = "swimmingyoshi"},
 ]
 keywords = ["audio", "neural-network", "vae", "generation", "synthesis", "machine-learning"]
 classifiers = [
@@ -31,9 +28,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "torch>=2.0.0",
-    "torchvision>=0.15.0",
-    "torchaudio>=2.0.0",
+    "torch>=2.1.0",
     "numpy>=1.21.0",
     "scipy>=1.7.0",
     "librosa>=0.9.0",
@@ -46,6 +41,10 @@ dependencies = [
     "tqdm>=4.64.0",
     "pandas>=1.5.0",
     "matplotlib>=3.5.0",
+    "umap-learn>=0.5.3",
+    "scikit-learn>=1.0.2",
+    "onnx>=1.14",
+    "onnxruntime>=1.16",
 ]
 
 [project.optional-dependencies]
@@ -63,23 +62,15 @@ docs = [
     "sphinx-rtd-theme>=1.2.0",
     "myst-parser>=0.18.0",
 ]
-gpu = [
-    "torch[cu118]>=2.0.0",  # CUDA 11.8
-]
 
 [project.scripts]
 latentaudio = "latentaudio.cli:main"
 latent-ui = "latentaudio.ui.app:main"
-latent-train = "latentaudio.cli:train_command"
-latent-generate = "latentaudio.cli:generate_command"
-latent-explore = "latentaudio.cli:explore_command"
 
 [project.urls]
-Homepage = "https://github.com/yourorg/latentaudio"
-Documentation = "https://latentaudio.readthedocs.io/"
-Repository = "https://github.com/yourorg/latentaudio.git"
-Issues = "https://github.com/yourorg/latentaudio/issues"
-Changelog = "https://github.com/yourorg/latentaudio/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/swimmingyoshi/LatentAudio"
+Repository = "https://github.com/swimmingyoshi/LatentAudio.git"
+Issues = "https://github.com/swimmingyoshi/LatentAudio/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

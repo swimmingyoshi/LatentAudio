@@ -3,3 +3,6 @@ __pycache__
 
 # Removed from history on 2026-10-21; keep out of commits
 logs/
+
+# Build metadata
+*.egg-info/

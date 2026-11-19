@@ -43,6 +43,7 @@ from ..types import (
 )
 from .vae import UnconditionalVAE
 from .simple_vae import SimpleFastVAE
+from ..v2.model import LatentAudioV2, V2Config
 from .training import TrainingLogger, create_optimizer_and_scheduler, compute_vae_loss
 from ..explorer.interpolator import LatentInterpolator
 from ..explorer.walker import LatentWalker
@@ -54,6 +55,7 @@ from ..config import (
     LOG_AUDIO_INTERVAL,
     LOW_PASS_ORDER,
     DEFAULT_POSTPROCESS_LOW_PASS,
+    DEFAULT_LOGS_DIR,
 )
 
 from ..logging import log_training_start, log_model_save, log_model_load
@@ -153,12 +155,18 @@ class AdvancedAudioGenerator:
         latent_dim: Optional[int] = None,
         skip_dropout_prob: float = 0.5,
         use_simple: bool = True,
+        model_type: Optional[str] = None,
     ) -> nn.Module:
-        """Build VAE model with extra conservative initialization."""
+        """Build a VAE. model_type: "v2" (recommended), "simple" (v1) or "complex" (v1)."""
         if latent_dim is None:
             latent_dim = self.config.latent_dim
 
-        if use_simple:
+        if model_type == "v2":
+            logger.info("Building LatentAudio v2 (spectral VAE, small ONNX decoder)...")
+            self.model = LatentAudioV2(
+                V2Config(sample_rate=self.config.sample_rate, length=self.waveform_length, latent_dim=latent_dim)
+            ).to(self.device)
+        elif use_simple:
             logger.info("Building SimpleFastVAE (optimized for speed)...")
             self.model = SimpleFastVAE(
                 latent_dim=latent_dim, waveform_length=self.waveform_length
@@ -273,6 +281,8 @@ class AdvancedAudioGenerator:
         """Training loop - NO WARMUP."""
         if self.model is None:
             raise RuntimeError("Model not built.")
+        if isinstance(self.model, LatentAudioV2):
+            return self._train_v2(samples, config, log_dir)
         self.load_to_vram()
         if config is None:
             config = TrainingConfig()
@@ -518,29 +528,12 @@ class AdvancedAudioGenerator:
                         )
                         total_loss = loss_dict["total_loss"] / config.gradient_accumulation_steps
 
-                    # CRITICAL FIX: Check for gradient overflow AFTER backward but BEFORE accumulation
                     scaler.scale(total_loss).backward()
-
-                    # Check for overflow immediately after backward
+                    # NaN/Inf gradients are detected below via the gradient norm (one
+                    # GPU sync) instead of scanning every parameter after each backward.
+                    # The old scan also called a non-existent GradScaler attribute and
+                    # crashed on the first overflow.
                     self._last_grad_overflow = False
-                    for name, param in self.model.named_parameters():
-                        if param.grad is not None and (
-                            torch.isnan(param.grad).any() or torch.isinf(param.grad).any()
-                        ):
-                            logger.error(
-                                f"Epoch {epoch}, Batch {i}: NaN/Inf gradient detected in {name}"
-                            )
-                            self._last_grad_overflow = True
-                            break
-
-                    if self._last_grad_overflow:
-                        logger.warning(
-                            f"Epoch {epoch}, Batch {i}: NaN/Inf gradient (norm=inf). Skipping step."
-                        )
-                        optimizer.zero_grad(set_to_none=True)
-                        scaler.update()
-                        scaler._scale_queue.append(scaler._scale)  # Maintain scaler state
-                        continue
 
                     # Gradient accumulation with NaN protection
                     if (i + 1) % config.gradient_accumulation_steps == 0:
@@ -557,6 +550,7 @@ class AdvancedAudioGenerator:
                         )
 
                         if torch.isnan(grad_norm) or torch.isinf(grad_norm):
+                            self._last_grad_overflow = True
                             logger.warning(
                                 f"Epoch {epoch}, Batch {i}: NaN/Inf gradient (norm={grad_norm}). Skipping."
                             )
@@ -718,6 +712,31 @@ class AdvancedAudioGenerator:
 
         return {"total_loss": avg_loss, "kl_loss": avg_kl}
 
+    def _train_v2(self, samples, config: Optional[TrainingConfig], log_dir: Optional[Path]) -> Dict[str, Any]:
+        """Train a v2 model with the v2 trainer (GPU-resident data, bf16, EMA)."""
+        from ..v2.trainer import TrainConfig as V2TrainConfig, Trainer as V2Trainer
+
+        config = config or TrainingConfig()
+        X = np.array(samples, dtype=np.float32)
+        X = X * (0.89 / np.maximum(np.abs(X).max(axis=1, keepdims=True), 1e-6))  # per-sound peak
+
+        tcfg = V2TrainConfig(epochs=config.epochs, batch_size=max(8, config.batch_size),
+                             lr=config.learning_rate if config.learning_rate >= 1e-4 else 4e-4)
+        out_dir = Path(log_dir) if log_dir else DEFAULT_LOGS_DIR / "v2"
+        self._cancel_training = False
+        trainer = V2Trainer(self.model.cfg, tcfg, out_dir, device=str(self.device), log=logger.info, model=self.model)
+
+        def on_epoch(epoch, record):
+            self._total_epochs_trained = epoch
+            if config.callback:
+                config.callback(epoch, record["loss"], record)
+
+        result = trainer.fit(X, None, on_epoch=on_epoch, should_stop=lambda: self._cancel_training)
+        self.model = trainer.ema.to(self.device)
+        self._best_loss = result["best_val_recon"]
+        return {"total_loss": trainer.history[-1]["loss"] if trainer.history else 0.0,
+                "kl_loss": trainer.history[-1]["kl"] if trainer.history else 0.0}
+
     def generate_from_latent(
         self, latent_vector: LatentVector, config: Optional[GenerationConfig] = None
     ) -> AudioArray:
@@ -838,7 +857,10 @@ class AdvancedAudioGenerator:
 
         from ..types import ModelCheckpoint
 
-        model_type = "simple" if isinstance(self.model, SimpleFastVAE) else "complex"
+        if isinstance(self.model, LatentAudioV2):
+            model_type = "v2"
+        else:
+            model_type = "simple" if isinstance(self.model, SimpleFastVAE) else "complex"
 
         checkpoint = ModelCheckpoint(
             model_state=self.model.state_dict(),
@@ -855,7 +877,10 @@ class AdvancedAudioGenerator:
             cached_labels=self.cached_labels,
         )
 
-        torch.save(checkpoint.to_dict(), str(filepath))
+        data = checkpoint.to_dict()
+        if isinstance(self.model, LatentAudioV2):
+            data["model_config"] = self.model.cfg.to_dict()
+        torch.save(data, str(filepath))
         log_model_save(Path(filepath))
 
     def load_model(self, filepath: Union[str, Path]) -> Dict[str, Any]:
@@ -868,7 +893,12 @@ class AdvancedAudioGenerator:
 
         model_type = checkpoint_dict.get("model_type", "simple")
 
-        if model_type == "simple" or "encoder.conv" in str(checkpoint_dict["model_state"].keys()):
+        if model_type == "v2":
+            cfg = V2Config.from_dict(checkpoint_dict["model_config"])
+            self.config.latent_dim = cfg.latent_dim
+            self.waveform_length = cfg.length
+            self.model = LatentAudioV2(cfg).to(self.device)
+        elif model_type == "simple" or "encoder.conv" in str(checkpoint_dict["model_state"].keys()):
             self.model = SimpleFastVAE(
                 latent_dim=self.config.latent_dim, waveform_length=self.waveform_length
             ).to(self.device)

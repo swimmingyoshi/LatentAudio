@@ -38,9 +38,9 @@ cd LatentAudio
    ```
 
 3. Install PyTorch (CUDA Support):
-   Visit pytorch.org (https://pytorch.org/get-started/locally/) to find the correct command for your CUDA version. For CUDA 11.8:
+   Visit pytorch.org (https://pytorch.org/get-started/locally/) to find the correct command for your CUDA version, e.g.:
       ```bash
-      pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+      pip install torch --index-url https://download.pytorch.org/whl/cu128
       ```
    
 4. Install LatentAudio:
@@ -55,7 +55,7 @@ cd LatentAudio
     ```
 - Start Training via CLI:
     ```bash
-    latent-train --help
+    latentaudio train --help
     ```
 
 **Download Trained 128D Kicks Model: [here](https://huggingface.co/Meowmeow42/LatentAudio/tree/main)**
@@ -76,7 +76,31 @@ PRUNED RESULTS USING GPU
 | VRAM Usage | 1,321 MB | 667 MB |
 | Load Time | 17.45 s | 15.98 s |
 
-## 🧠 Model Architecture: The Phase 7 Engine
+## ⚡ LatentAudio v2 (recommended)
+
+v2 is a rebuilt model aimed at the VST: a spectral VAE whose decoder runs at STFT
+frame rate (ConvNeXt blocks conditioned on the latent) and synthesises audio with an
+inverse STFT implemented as a fixed transposed convolution, so it exports to plain
+ONNX that the plugin's ONNX Runtime can run. Compared with v1 it has no encoder→decoder
+skip connections (training and generation use the same path), trains with spectral,
+mel and energy-envelope losses on every step, keeps the dataset on the GPU, uses bf16
+and an EMA of the weights, and holds out 10% of the sounds to measure generalisation.
+
+Train on a folder of one-shots and export a VST model folder in one go:
+```bash
+python scripts/train_v2.py --data path/to/one_shots --out runs/my_model --export path/to/MyModelVST
+```
+Presets: `--preset base` (default), `fast` (smaller/faster decoder) or `transient`
+(finer time resolution). `--beta` trades detail (low) for a smoother map (high).
+Sound map labels are the file names, so hovering a dot in the VST shows the sample name.
+
+Compare exported models (v1 or v2) on the same sounds with identical metrics:
+```bash
+python scripts/compare_models.py --data path/to/one_shots --model v1=OldModelVST --model v2=MyModelVST --out runs/compare
+```
+The GUI and `latentaudio train --model-type v2` can train v2 models too.
+
+## 🧠 Model Architecture (v1): The Phase 7 Engine
 
 The core of LatentAudio is a **1D Convolutional U-Net VAE**, specifically engineered for high-sample-rate audio generation (44.1kHz).
 

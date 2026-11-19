@@ -696,20 +696,6 @@ class LatentExplorerApp(QWidget):
         # Show training dialog
         dialog = TrainingDialog(len(self.samples), self, resume_from=resume_from)
 
-        # DEBUG: Log beta KL value right after dialog creation
-        try:
-            with open("latentaudio_debug_after_create.txt", "w") as f:
-                f.write(f"AFTER dialog creation: beta_kl = {dialog.beta_kl_spin.value()}\n")
-        except:
-            pass
-
-        # DEBUG: Log beta KL value before dialog execution
-        try:
-            with open("latentaudio_debug_before_exec.txt", "w") as f:
-                f.write(f"BEFORE dialog.exec(): beta_kl = {dialog.beta_kl_spin.value()}\n")
-        except:
-            pass
-
         if not dialog.exec():
             return
 
@@ -718,7 +704,7 @@ class LatentExplorerApp(QWidget):
 
         # Build model if not already built
         if self.generator.model is None:
-            self.generator.build_model()
+            self.generator.build_model(latent_dim=config.latent_dim, model_type=dialog.model_type())
 
         # Create progress dialog
         start_epoch = resume_from.get("total_epochs_trained", 0) if resume_from else 0

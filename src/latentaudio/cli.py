@@ -117,6 +117,8 @@ def cli(ctx, verbose, config):
 @click.option("--duration", "-d", type=float, default=0.5, help="Audio duration in seconds")
 @click.option("--device", type=str, default="auto", help="Device to use (cpu, cuda, auto)")
 @click.option("--tensorboard", is_flag=True, help="Launch TensorBoard after training")
+@click.option("--model-type", type=click.Choice(["v2", "simple"]), default="v2",
+              help="v2: spectral VAE with a small, fast decoder (recommended); simple: legacy v1")
 @click.pass_context
 def train(
     ctx,
@@ -130,6 +132,7 @@ def train(
     duration,
     device,
     tensorboard,
+    model_type,
 ):
     """Train a new VAE model on audio data.
 
@@ -157,6 +160,8 @@ def train(
         raise click.ClickException(f"No audio files found in {data_dir}")
 
     logger.info(f"Loaded {len(samples)} audio samples")
+
+    generator.build_model(latent_dim=latent_dim, model_type=model_type)
 
     # Create training config
     train_config = TrainingConfig(
