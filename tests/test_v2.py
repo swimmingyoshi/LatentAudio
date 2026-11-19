@@ -93,3 +93,27 @@ def test_onnx_export_matches_torch(tmp_path):
     ref = model.decode(z).detach().numpy()
     assert out.shape == (2, SMALL.length)
     np.testing.assert_allclose(out, ref, atol=1e-4)
+
+
+@pytest.mark.parametrize("path,expected", [
+    ("KSHMR_Live_Instruments/KSHMR_Violin_01_100_C#.wav", "strings"),     # file name beats folder
+    ("INSTRUMENT SOUNDS/BELLS/BELL - BUCKET.wav", "bell"),                # "strum" is not in "instrument"
+    ("Pokemon_Cries/051 - Dugtrio/PLAY_PV_0051.wav", "other"),            # "gtr" is not in "Dugtrio"
+    ("Acoustic_Drums/KSHMR_Acoustic_Tom_01_Low_B.wav", "perc"),           # "acoustic" is not guitar
+    ("Guitar/KSHMR_Acoustic_Guitar_Chords_01_G#m.wav", "guitar"),
+    ("Kicks/KSHMR Big Kick 01 (D).wav", "kick"),
+    ("Hats/KSHMR_Closed_Hat_03.wav", "hihat"),
+])
+def test_category_classifier(path, expected):
+    from latentaudio.v2.categories import classify
+
+    assert classify(path) == expected
+
+
+def test_loop_detection():
+    from latentaudio.v2.categories import is_loop
+
+    assert is_loop(Path("Guitar Loops 112BPM/x.wav"))
+    assert is_loop(Path("Fills/KSHMR_Acoustic_Fill_01_90.wav"))
+    assert is_loop(Path("Phrases/Lead [122bpm Cm].wav"))
+    assert is_loop(Path("Kicks/KSHMR Big Kick 01 (D).wav")) is None

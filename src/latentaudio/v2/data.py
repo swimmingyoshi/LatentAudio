@@ -23,7 +23,8 @@ def load_one_shot(path: Path, sample_rate: int, length: int, peak: float = 0.89,
     import librosa
 
     try:
-        audio, _ = librosa.load(str(path), sr=sample_rate, mono=True)
+        # Only read what we can use (plus slack for trimming leading silence).
+        audio, _ = librosa.load(str(path), sr=sample_rate, mono=True, duration=length / sample_rate + 2.0)
     except Exception:
         return None
     if audio.size == 0 or not np.isfinite(audio).all():
