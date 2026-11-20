@@ -29,7 +29,7 @@ def export_decoder_onnx(model: LatentAudioV2, path: Path) -> Path:
     import onnx
 
     model = model.cpu().eval()
-    dummy = torch.zeros(1, model.latent_dim)
+    dummy = torch.zeros(1, model.cfg.decoder_input_dim)
     torch.onnx.export(
         _DecoderForExport(model), (dummy,), str(path),
         input_names=["latent_input"], output_names=["audio_output"],
@@ -75,16 +75,32 @@ def encode_dataset(model: LatentAudioV2, audio: np.ndarray, device: str = "cpu")
 
 
 def export_vst_folder(model: LatentAudioV2, audio: np.ndarray, labels: List[str], out_dir: Path,
-                      device: str = "cpu", method: str = "auto") -> dict:
-    """Writes latent_decoder.onnx + sound_map.json into out_dir."""
+                      device: str = "cpu", method: str = "auto", midi: Optional[np.ndarray] = None) -> dict:
+    """Writes latent_decoder.onnx + sound_map.json into out_dir.
+
+    Pitched models: each point's latent gets its normalised pitch appended (so the
+    plugin's latent size equals the ONNX input size) and the map describes where
+    the pitch lives, so the plugin can replace it with a played MIDI note.
+    """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     latents = encode_dataset(model, audio, device)
-    coords = project_2d(latents, method)
+    coords = project_2d(latents, method)  # layout by timbre only
+    cfg = model.cfg
+    if cfg.pitch_conditioned:
+        if midi is None:
+            raise ValueError("pitched model export needs midi per sound")
+        latents = np.concatenate([latents, ((midi - cfg.pitch_offset) / cfg.pitch_scale)[:, None]], axis=1)
     points = [{"label": labels[i], "x": float(coords[i, 0]), "y": float(coords[i, 1]),
                "latent": [round(float(v), 6) for v in latents[i]]} for i in range(len(latents))]
-    sound_map = {"latent_dim": model.latent_dim, "sample_rate": model.cfg.sample_rate,
+    if cfg.pitch_conditioned:
+        for i, p in enumerate(points):
+            p["midi"] = round(float(midi[i]), 2)
+    sound_map = {"latent_dim": cfg.decoder_input_dim, "sample_rate": cfg.sample_rate,
                  "model": "latentaudio-v2", "points": points}
+    if cfg.pitch_conditioned:
+        # latent[index] = (midi - offset) / scale
+        sound_map["pitch"] = {"index": cfg.latent_dim, "offset": cfg.pitch_offset, "scale": cfg.pitch_scale}
     (out_dir / "sound_map.json").write_text(json.dumps(sound_map))
     onnx_path = export_decoder_onnx(model, out_dir / "latent_decoder.onnx")
     return {"onnx_mb": onnx_path.stat().st_size / 1e6, "points": len(points)}

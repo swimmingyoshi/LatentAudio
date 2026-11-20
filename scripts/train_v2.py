@@ -39,6 +39,8 @@ def main():
     ap.add_argument("--lr", type=float, default=4e-4)
     ap.add_argument("--beta", type=float, default=2e-3, help="KL weight (higher = smoother map, less detail)")
     ap.add_argument("--w-env", type=float, default=1.0, help="Energy-envelope loss weight (keeps long tails)")
+    ap.add_argument("--pitch", action="store_true",
+                    help="Pitch-conditioned model (melodic instruments); needs the dataset's manifest.json from build_dataset --pitch")
     ap.add_argument("--val-fraction", type=float, default=0.1)
     ap.add_argument("--eval-every", type=int, default=20)
     ap.add_argument("--export", type=Path, help="Write a VST model folder here when done (uses ALL sounds)")
@@ -54,23 +56,35 @@ def main():
         audio, labels = load_folder(args.data, length=int(args.seconds * 44100))
         np.savez(cache, audio=audio, labels=np.array(labels))
 
+    midi = None
+    if args.pitch:
+        manifest = json.loads((args.data / "manifest.json").read_text())
+        by_label = {c["file"].rsplit(".", 1)[0]: c["midi"] + c.get("cents", 0) / 100.0
+                    for c in manifest["clips"] if "midi" in c}
+        keep = [i for i, l in enumerate(labels) if l in by_label]
+        print(f"Pitch-conditioned: {len(keep)}/{len(labels)} sounds have a detected pitch")
+        audio, labels = audio[keep], [labels[i] for i in keep]
+        midi = np.array([by_label[l] for l in labels], dtype=np.float32)
+
     train_idx, val_idx = split_indices(len(audio), args.val_fraction)
     (args.out / "val_labels.json").write_text(json.dumps([labels[i] for i in val_idx], indent=1))
-    mcfg = V2Config(latent_dim=args.latent_dim, length=audio.shape[1], **PRESETS[args.preset])
+    mcfg = V2Config(latent_dim=args.latent_dim, length=audio.shape[1], pitch_conditioned=args.pitch, **PRESETS[args.preset])
     tcfg = TrainConfig(epochs=args.epochs, batch_size=args.batch_size, lr=args.lr, beta_kl=args.beta, w_env=args.w_env,
                        val_fraction=args.val_fraction, eval_every=args.eval_every)
     (args.out / "config.json").write_text(json.dumps({"model": mcfg.to_dict(), "train": tcfg.to_dict(),
                                                       "data": str(args.data), "preset": args.preset}, indent=1))
 
     trainer = Trainer(mcfg, tcfg, args.out)
-    result = trainer.fit(audio[train_idx], audio[val_idx] if len(val_idx) else None)
+    result = trainer.fit(audio[train_idx], audio[val_idx] if len(val_idx) else None,
+                         pitch_train=None if midi is None else midi[train_idx],
+                         pitch_val=None if midi is None or not len(val_idx) else midi[val_idx])
     print(f"Done in {result['minutes']:.1f} min, best val recon {result['best_val_recon']:.4f}")
 
     if args.export:
         from latentaudio.v2.export import export_vst_folder
 
         model = load_v2(args.out / "best.pt")
-        info = export_vst_folder(model, audio, labels, args.export)
+        info = export_vst_folder(model, audio, labels, args.export, midi=midi)
         print(f"Exported VST folder to {args.export}: {info}")
 
 

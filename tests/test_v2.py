@@ -117,3 +117,35 @@ def test_loop_detection():
     assert is_loop(Path("Fills/KSHMR_Acoustic_Fill_01_90.wav"))
     assert is_loop(Path("Phrases/Lead [122bpm Cm].wav"))
     assert is_loop(Path("Kicks/KSHMR Big Kick 01 (D).wav")) is None
+
+
+PITCHED = V2Config(**{**SMALL.to_dict(), "pitch_conditioned": True})
+
+
+def test_pitched_model_api():
+    model = LatentAudioV2(PITCHED).eval()
+    assert PITCHED.decoder_input_dim == PITCHED.latent_dim + 1
+    x = torch.randn(2, PITCHED.length) * 0.1
+    midi = torch.tensor([48.0, 72.0])
+    recon, mu, _, _, _ = model(x, midi=midi)
+    assert recon.shape == x.shape and mu.shape == (2, PITCHED.latent_dim)
+    z = model.sample_latent(2)
+    full = model.decoder_input(z, midi)
+    assert full.shape == (2, PITCHED.latent_dim + 1)
+    assert torch.allclose(full[:, -1], (midi - 60) / 24)
+    # bare latent + midi and full input give the same audio
+    assert torch.allclose(model.decode(z, midi=midi), model.decode(full), atol=1e-6)
+    # pitch actually changes the output
+    assert not torch.allclose(model.decode(z, midi=torch.tensor([40.0, 40.0])), model.decode(z, midi=midi))
+
+
+def test_pitched_onnx_export_matches_torch(tmp_path):
+    ort = pytest.importorskip("onnxruntime")
+    from latentaudio.v2.export import export_decoder_onnx
+
+    model = LatentAudioV2(PITCHED).eval()
+    path = export_decoder_onnx(model, tmp_path / "dec_pitched.onnx")
+    full = model.decoder_input(torch.randn(3, PITCHED.latent_dim), torch.tensor([40.3, 60.0, 81.7]))
+    sess = ort.InferenceSession(str(path), providers=["CPUExecutionProvider"])
+    out = sess.run(["audio_output"], {"latent_input": full.numpy()})[0]
+    np.testing.assert_allclose(out, model.decode(full).detach().numpy(), atol=1e-4)

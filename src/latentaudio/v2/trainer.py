@@ -49,6 +49,8 @@ class TrainConfig:
     seed: int = 0
     use_bf16: bool = True
     gain_augment_db: float = 3.0  # random +-dB gain per example
+    pitch_shift_semitones: float = 2.0  # pitched models: random resample +-N st per batch
+    pitch_shift_prob: float = 0.5
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -83,12 +85,13 @@ class Trainer:
         progress = (step - c.warmup_steps) / max(1, total - c.warmup_steps)
         return c.min_lr + 0.5 * (c.lr - c.min_lr) * (1 + math.cos(math.pi * min(1.0, progress)))
 
-    def _losses(self, model: LatentAudioV2, x: torch.Tensor, beta: float) -> Dict[str, torch.Tensor]:
+    def _losses(self, model: LatentAudioV2, x: torch.Tensor, beta: float,
+                midi: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
         c = self.tcfg
         with torch.autocast(self.device.type, dtype=torch.bfloat16, enabled=c.use_bf16 and self.device.type == "cuda"):
             mu, logvar = model.encoder(x)
             z = model.reparameterize(mu.float(), logvar.float())
-            y_hat = model.decoder(z)
+            y_hat = model.decoder(model.decoder_input(z, midi))
         stft = self.mrstft(y_hat, x)
         mel = self.mel(y_hat, x)
         env = self.env(y_hat, x) if c.w_env > 0 else y_hat.new_zeros(())
@@ -104,8 +107,21 @@ class Trainer:
             self._ema_pairs = ([e for e, _ in pairs], [p for _, p in pairs])
         torch._foreach_lerp_(self._ema_pairs[0], self._ema_pairs[1], 1.0 - decay)
 
+    @staticmethod
+    def _pitch_shift(x: torch.Tensor, semitones: float) -> torch.Tensor:
+        """Resample a batch so it plays `semitones` higher (and correspondingly shorter)."""
+        ratio = 2.0 ** (semitones / 12.0)
+        n = x.shape[1]
+        pos = torch.arange(n, device=x.device, dtype=torch.float32) * ratio
+        i0 = pos.floor().long().clamp(max=n - 1)
+        i1 = (i0 + 1).clamp(max=n - 1)
+        frac = (pos - pos.floor()).unsqueeze(0)
+        y = x[:, i0] * (1 - frac) + x[:, i1] * frac
+        return y * (pos < n - 1).float().unsqueeze(0)
+
     @torch.no_grad()
-    def evaluate(self, data: torch.Tensor, model: Optional[LatentAudioV2] = None) -> Dict[str, float]:
+    def evaluate(self, data: torch.Tensor, model: Optional[LatentAudioV2] = None,
+                 midi: Optional[torch.Tensor] = None) -> Dict[str, float]:
         """Reconstruction through the mean latent (what the VST plays)."""
         model = model or self.ema
         model.eval()
@@ -114,7 +130,7 @@ class Trainer:
         for i in range(0, len(data), 32):
             x = data[i:i + 32]
             mu, _ = model.encoder(x)
-            y_hat = model.decoder(mu)
+            y_hat = model.decoder(model.decoder_input(mu, None if midi is None else midi[i:i + 32]))
             for k, v in spectral_metrics(y_hat, x, self.mcfg.sample_rate).items():
                 metrics.setdefault(k, []).extend(v)
             stft = self.mrstft(y_hat, x)
@@ -126,10 +142,18 @@ class Trainer:
     # ------------------------------------------------------------------
     def fit(self, train: np.ndarray, val: Optional[np.ndarray] = None,
             on_epoch: Optional[Callable[[int, Dict], None]] = None,
-            should_stop: Optional[Callable[[], bool]] = None) -> Dict:
+            should_stop: Optional[Callable[[], bool]] = None,
+            pitch_train: Optional[np.ndarray] = None, pitch_val: Optional[np.ndarray] = None) -> Dict:
+        """pitch_* : MIDI pitch per sound (float), required for pitch-conditioned models."""
         c = self.tcfg
         X = torch.from_numpy(train).to(self.device)
         V = torch.from_numpy(val).to(self.device) if val is not None and len(val) else None
+        pitched = self.mcfg.pitch_conditioned
+        if pitched and pitch_train is None:
+            raise ValueError("pitch-conditioned model needs pitch_train")
+        PX = torch.tensor(pitch_train, dtype=torch.float32, device=self.device) if pitched else None
+        PV = (torch.tensor(pitch_val, dtype=torch.float32, device=self.device)
+              if pitched and V is not None else None)
         n = len(X)
         bs = min(c.batch_size, n)
         steps_per_epoch = max(1, n // bs)
@@ -152,12 +176,19 @@ class Trainer:
         t0 = time.time()
         gen = torch.Generator(device=self.device)
         gen.manual_seed(c.seed)
+        cpu_rng = np.random.default_rng(c.seed)  # host-side draws: no GPU sync
         for epoch in range(1, c.epochs + 1):
             self.model.train()
             perm = torch.randperm(n, device=self.device, generator=gen)
             acc: Dict[str, torch.Tensor] = {}
             for b in range(steps_per_epoch):
-                x = X[perm[b * bs:(b + 1) * bs]]
+                idx = perm[b * bs:(b + 1) * bs]
+                x = X[idx]
+                midi = PX[idx] if pitched else None
+                if pitched and c.pitch_shift_semitones > 0 and cpu_rng.random() < c.pitch_shift_prob:
+                    st = float(cpu_rng.uniform(-1, 1)) * c.pitch_shift_semitones
+                    x = self._pitch_shift(x, st)
+                    midi = midi + st
                 if c.gain_augment_db > 0:
                     gain_db = (torch.rand(len(x), 1, device=self.device, generator=gen) * 2 - 1) * c.gain_augment_db
                     x = x * torch.pow(10.0, gain_db / 20)
@@ -167,7 +198,7 @@ class Trainer:
                     g["lr"] = lr
                 beta = c.beta_kl * min(1.0, step / max(1, c.kl_warmup_steps))
 
-                losses = self._losses(self.model, x, beta)
+                losses = self._losses(self.model, x, beta, midi)
                 opt.zero_grad(set_to_none=True)
                 losses["loss"].backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), c.grad_clip)
@@ -185,7 +216,7 @@ class Trainer:
                 raise FloatingPointError(f"Loss became non-finite at epoch {epoch}")
 
             if epoch % c.eval_every == 0 or epoch == c.epochs:
-                ev = self.evaluate(V if V is not None else X[: min(n, 64)])
+                ev = self.evaluate(V if V is not None else X[: min(n, 64)], midi=PV if V is not None else (PX[: min(n, 64)] if pitched else None))
                 record.update({f"val_{k}": v for k, v in ev.items()})
                 if ev["recon"] < best:
                     best = ev["recon"]
