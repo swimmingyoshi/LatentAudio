@@ -100,6 +100,17 @@ python scripts/compare_models.py --data path/to/one_shots --model v1=OldModelVST
 ```
 The GUI and `latentaudio train --model-type v2` can train v2 models too.
 
+**Sky map.** Exports include an even 2D layout, a smooth latent field over the whole
+map (an inverse-distance blend of all sounds with a smooth taper, sampled on a 128x128
+grid the plugin reads bicubically - no creases where the nearest sounds change),
+per-sound brightness/length (star colour/size) and a nebula grid decoded by the model.
+Upgrade folders exported before this without retraining (the old map is kept as
+`sound_map.v1.json`), and measure map quality (held-out sounds, creases, midpoints):
+```bash
+python scripts/upgrade_map.py path/to/MyModelVST
+python scripts/eval_map.py --model path/to/MyModelVST
+```
+
 ## 🧠 Model Architecture (v1): The Phase 7 Engine
 
 The core of LatentAudio is a **1D Convolutional U-Net VAE**, specifically engineered for high-sample-rate audio generation (44.1kHz).

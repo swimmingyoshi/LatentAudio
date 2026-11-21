@@ -75,7 +75,8 @@ def encode_dataset(model: LatentAudioV2, audio: np.ndarray, device: str = "cpu")
 
 
 def export_vst_folder(model: LatentAudioV2, audio: np.ndarray, labels: List[str], out_dir: Path,
-                      device: str = "cpu", method: str = "auto", midi: Optional[np.ndarray] = None) -> dict:
+                      device: str = "cpu", method: str = "auto", midi: Optional[np.ndarray] = None,
+                      sky_map: bool = True) -> dict:
     """Writes latent_decoder.onnx + sound_map.json into out_dir.
 
     Pitched models: each point's latent gets its normalised pitch appended (so the
@@ -101,6 +102,19 @@ def export_vst_folder(model: LatentAudioV2, audio: np.ndarray, labels: List[str]
     if cfg.pitch_conditioned:
         # latent[index] = (midi - offset) / scale
         sound_map["pitch"] = {"index": cfg.latent_dim, "offset": cfg.pitch_offset, "scale": cfg.pitch_scale}
+    if sky_map:
+        # Even layout, smooth field, star colours/sizes and the nebula (see mapfield.py).
+        from .mapfield import apply_sky_map, build_sky_map
+
+        decoder = model.decoder.to(device).eval()
+
+        @torch.no_grad()
+        def decode(z, batch=32):
+            return np.concatenate([decoder(torch.as_tensor(z[i:i + batch], dtype=torch.float32, device=device))
+                                   .float().cpu().numpy() for i in range(0, len(z), batch)])
+
+        extras = build_sky_map(coords, latents, decode, cfg.sample_rate, timbre_dims=cfg.latent_dim)
+        sound_map = apply_sky_map(sound_map, extras)
     (out_dir / "sound_map.json").write_text(json.dumps(sound_map))
     onnx_path = export_decoder_onnx(model, out_dir / "latent_decoder.onnx")
     return {"onnx_mb": onnx_path.stat().st_size / 1e6, "points": len(points)}
