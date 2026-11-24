@@ -10,5 +10,5 @@ def test_anonymize_removes_names_and_unknown_keys():
     out = anonymize({"latent_dim": 1, "sample_rate": 44100, "data_dir": "D:/Secret",
                      "points": [p, {**p, "midi": 57.08}]}, "Kick")
     assert "Secret" not in str(out)
-    assert [q["label"] for q in out["points"]] == ["Kick 001", "Kick 002 (A3)"]
+    assert [q["label"] for q in out["points"]] == ["Kick 001", "Kick 002"]
     assert out["points"][0]["latent"] == [1.0] and out["points"][1]["midi"] == 57.08

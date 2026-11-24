@@ -90,6 +90,10 @@ V1 PRUNED RESULTS USING GPU
 
 ## ⚡ LatentAudio v2 (recommended)
 
+A v2 model in [LatentAudioVST](https://github.com/swimmingyoshi/LatentAudioVST). Each star is a sound:
+
+![Strings model in the VST sky map](images/VST-sky-map.png)
+
 ### Why use v2 models
 
 | | v1 | v2 |

@@ -1,6 +1,6 @@
 """Copy a VST model folder for sharing, without sample names.
 
-Labels become "<name> 001" (plus the note for pitched models); audio, positions and
+Labels become "<name> 001" (the plugin adds the note for pitched models); audio, positions and
 the sky map are unchanged. Only latent_decoder.onnx and sound_map.json are written
 (never sound_map.v1.json, which still holds the original names).
 
@@ -13,7 +13,6 @@ import json
 import shutil
 from pathlib import Path
 
-NOTES = ("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
 TOP_KEYS = ("latent_dim", "sample_rate", "model", "points", "pitch", "field", "sky", "map_version")
 POINT_KEYS = ("x", "y", "latent", "midi", "brightness", "length")  # label is replaced
 
@@ -25,9 +24,6 @@ def anonymize(sound_map: dict, name: str) -> dict:
     points = []
     for i, p in enumerate(sound_map["points"], 1):
         label = f"{name} {i:0{width}d}"
-        if "midi" in p:
-            m = round(p["midi"])
-            label += f" ({NOTES[m % 12]}{m // 12 - 1})"
         points.append({"label": label, **{k: p[k] for k in POINT_KEYS if k in p}})
     out["points"] = points
     return out
