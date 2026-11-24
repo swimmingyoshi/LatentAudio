@@ -980,7 +980,7 @@ def main():
 
     # Set application properties
     app.setApplicationName("LatentAudio")
-    app.setApplicationVersion("1.0.0")
+    app.setApplicationVersion("2.0.0b1")
     app.setOrganizationName("LatentAudio Team")
 
     try:

@@ -15,6 +15,7 @@ from __future__ import annotations
 import copy
 import json
 import math
+import os
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -143,8 +144,10 @@ class Trainer:
     def fit(self, train: np.ndarray, val: Optional[np.ndarray] = None,
             on_epoch: Optional[Callable[[int, Dict], None]] = None,
             should_stop: Optional[Callable[[], bool]] = None,
-            pitch_train: Optional[np.ndarray] = None, pitch_val: Optional[np.ndarray] = None) -> Dict:
-        """pitch_* : MIDI pitch per sound (float), required for pitch-conditioned models."""
+            pitch_train: Optional[np.ndarray] = None, pitch_val: Optional[np.ndarray] = None,
+            resume: bool = False) -> Dict:
+        """pitch_* : MIDI pitch per sound (float), required for pitch-conditioned models.
+        resume : continue from out_dir/state.pt (written at every evaluation)."""
         c = self.tcfg
         X = torch.from_numpy(train).to(self.device)
         V = torch.from_numpy(val).to(self.device) if val is not None and len(val) else None
@@ -177,7 +180,34 @@ class Trainer:
         gen = torch.Generator(device=self.device)
         gen.manual_seed(c.seed)
         cpu_rng = np.random.default_rng(c.seed)  # host-side draws: no GPU sync
-        for epoch in range(1, c.epochs + 1):
+        start_epoch = epoch = 0
+        prior_s = 0.0
+        if resume:
+            st = self._load_state(opt, gen, cpu_rng, n)
+            start_epoch = epoch = st["epoch"]
+            step, best, prior_s = st["step"], st["best"], st["elapsed_s"]
+            self.log(f"Resuming after epoch {start_epoch}")
+        else:
+            # A previous run's files must not pass for this run's results.
+            for name in ("best.pt", "state.pt"):
+                old = self.out_dir / name
+                if old.exists():
+                    os.replace(old, old.with_suffix(".prev.pt"))
+        t0 -= prior_s
+
+        def evaluate_and_keep_best() -> Dict[str, float]:
+            nonlocal best
+            if V is not None:
+                ev = self.evaluate(V, midi=PV)
+            else:
+                k = min(n, 64)
+                ev = self.evaluate(X[:k], midi=PX[:k] if pitched else None)
+            if ev["recon"] < best:
+                best = ev["recon"]
+                self.save(self.out_dir / "best.pt", extra={"epoch": epoch, "val": ev})
+            return ev
+
+        for epoch in range(start_epoch + 1, c.epochs + 1):
             self.model.train()
             perm = torch.randperm(n, device=self.device, generator=gen)
             acc: Dict[str, torch.Tensor] = {}
@@ -216,24 +246,55 @@ class Trainer:
                 raise FloatingPointError(f"Loss became non-finite at epoch {epoch}")
 
             if epoch % c.eval_every == 0 or epoch == c.epochs:
-                ev = self.evaluate(V if V is not None else X[: min(n, 64)], midi=PV if V is not None else (PX[: min(n, 64)] if pitched else None))
+                ev = evaluate_and_keep_best()
                 record.update({f"val_{k}": v for k, v in ev.items()})
-                if ev["recon"] < best:
-                    best = ev["recon"]
-                    self.save(self.out_dir / "best.pt", extra={"epoch": epoch, "val": ev})
                 self.log(f"epoch {epoch:4d}  loss {record['loss']:.4f}  recon {record['recon']:.4f}  "
                          f"kl {record['kl']:.1f}  | val lsd {ev['lsd_db']:.2f} dB  mel {ev['mel_db']:.2f} dB  "
                          f"loud {ev['loudness_db']:.2f} dB  | {record['elapsed_s'] / 60:.1f} min")
             self.history.append(record)
+            if epoch % c.eval_every == 0 or epoch == c.epochs:
+                self._save_state(opt, gen, cpu_rng, n, epoch, step, best, time.time() - t0)
             if on_epoch:
                 on_epoch(epoch, record)
             if should_stop and should_stop():
                 self.log(f"Stopped at epoch {epoch}")
+                if "val_recon" not in record:
+                    record.update({f"val_{k}": v for k, v in evaluate_and_keep_best().items()})
+                    self._save_state(opt, gen, cpu_rng, n, epoch, step, best, time.time() - t0)
                 break
 
-        self.save(self.out_dir / "last.pt", extra={"epoch": c.epochs})
+        self.save(self.out_dir / "last.pt", extra={"epoch": epoch})
         (self.out_dir / "history.json").write_text(json.dumps(self.history, indent=1))
         return {"best_val_recon": best, "minutes": (time.time() - t0) / 60}
+
+    def _save_state(self, opt, gen, cpu_rng, n: int, epoch: int, step: int, best: float, elapsed_s: float) -> None:
+        path = self.out_dir / "state.pt"
+        tmp = path.with_suffix(".tmp")
+        torch.save({"model_config": self.mcfg.to_dict(), "train_config": self.tcfg.to_dict(), "n": n,
+                    "model": self.model.state_dict(), "ema": self.ema.state_dict(), "opt": opt.state_dict(),
+                    "gen": gen.get_state(), "cpu_rng": cpu_rng.bit_generator.state,
+                    "torch_rng": torch.get_rng_state(),
+                    "cuda_rng": torch.cuda.get_rng_state(self.device) if self.device.type == "cuda" else None,
+                    "epoch": epoch, "step": step, "best": best, "elapsed_s": elapsed_s,
+                    "history": self.history}, str(tmp))
+        os.replace(tmp, path)  # a crash mid-write keeps the previous state
+
+    def _load_state(self, opt, gen, cpu_rng, n: int) -> Dict:
+        st = torch.load(str(self.out_dir / "state.pt"), map_location="cpu", weights_only=True)
+        same = lambda d: {k: v for k, v in d.items() if k != "epochs"}  # noqa: E731 - epochs may be extended
+        if (st["model_config"] != self.mcfg.to_dict() or st["n"] != n
+                or same(st["train_config"]) != same(self.tcfg.to_dict())):
+            raise ValueError("Cannot resume: model, training settings or dataset differ from the saved run")
+        self.model.load_state_dict(st["model"])
+        self.ema.load_state_dict(st["ema"])
+        opt.load_state_dict(st["opt"])
+        gen.set_state(st["gen"])
+        cpu_rng.bit_generator.state = st["cpu_rng"]
+        torch.set_rng_state(st["torch_rng"])
+        if self.device.type == "cuda" and st["cuda_rng"] is not None:
+            torch.cuda.set_rng_state(st["cuda_rng"], self.device)
+        self.history = st["history"]
+        return st
 
     def save(self, path: Path, extra: Optional[Dict] = None) -> None:
         torch.save({"model_type": "v2", "model_config": self.mcfg.to_dict(), "train_config": self.tcfg.to_dict(),
@@ -241,7 +302,7 @@ class Trainer:
 
 
 def load_v2(path: Path, device: str = "cpu") -> LatentAudioV2:
-    ckpt = torch.load(str(path), map_location=device, weights_only=False)
+    ckpt = torch.load(str(path), map_location=device, weights_only=True)
     model = LatentAudioV2(V2Config.from_dict(ckpt["model_config"]))
     model.load_state_dict(ckpt["model_state"])
     return model.to(device).eval()

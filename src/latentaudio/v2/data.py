@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import List, Tuple
 
@@ -63,6 +64,31 @@ def load_folder(folder: Path, sample_rate: int = 44100, length: int = 44100,
     if not audio:
         raise ValueError(f"No usable audio found in {folder}")
     return np.stack(audio), labels
+
+
+def dataset_fingerprint(folder: Path, length: int) -> str:
+    """Changes when the folder, its audio files or the sound length change."""
+    folder = Path(folder).resolve()
+    h = hashlib.sha256(f"{folder}|{length}".encode())
+    for p in find_audio_files(folder):
+        s = p.stat()
+        h.update(f"|{p.relative_to(folder)}|{s.st_size}|{s.st_mtime_ns}".encode())
+    return h.hexdigest()
+
+
+def load_folder_cached(folder: Path, length: int, cache: Path) -> Tuple[np.ndarray, List[str]]:
+    """load_folder at 44.1 kHz, reusing `cache` only if it was built from the same data."""
+    key = dataset_fingerprint(folder, length)
+    if cache.exists():
+        with np.load(cache, allow_pickle=False) as d:
+            if "key" in d and str(d["key"]) == key:
+                labels = [str(l) for l in d["labels"]]
+                print(f"Loaded {len(labels)} sounds from cache")
+                return d["audio"], labels
+        print("Dataset cache does not match the requested data; rebuilding it")
+    audio, labels = load_folder(folder, length=length)
+    np.savez(cache, audio=audio, labels=np.array(labels), key=np.array(key))
+    return audio, labels
 
 
 def split_indices(n: int, val_fraction: float, seed: int = 0) -> Tuple[np.ndarray, np.ndarray]:

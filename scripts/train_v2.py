@@ -15,7 +15,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from latentaudio.v2.data import load_folder, split_indices  # noqa: E402
+from latentaudio.v2.data import load_folder_cached, split_indices  # noqa: E402
 from latentaudio.v2.model import V2Config  # noqa: E402
 from latentaudio.v2.trainer import TrainConfig, Trainer, load_v2  # noqa: E402
 
@@ -43,18 +43,16 @@ def main():
                     help="Pitch-conditioned model (melodic instruments); needs the dataset's manifest.json from build_dataset --pitch")
     ap.add_argument("--val-fraction", type=float, default=0.1)
     ap.add_argument("--eval-every", type=int, default=20)
+    ap.add_argument("--resume", action="store_true", help="Continue the run in --out (same settings; --epochs may be raised)")
     ap.add_argument("--export", type=Path, help="Write a VST model folder here when done (uses ALL sounds)")
     args = ap.parse_args()
 
+    if args.resume and not (args.out / "state.pt").exists():
+        ap.error(f"--resume: no state.pt in {args.out}")
+
     args.out.mkdir(parents=True, exist_ok=True)
     cache = args.out / "dataset_cache.npz"
-    if cache.exists():
-        d = np.load(cache, allow_pickle=False)
-        audio, labels = d["audio"], list(d["labels"])
-        print(f"Loaded {len(audio)} sounds from cache")
-    else:
-        audio, labels = load_folder(args.data, length=int(args.seconds * 44100))
-        np.savez(cache, audio=audio, labels=np.array(labels))
+    audio, labels = load_folder_cached(args.data, int(args.seconds * 44100), cache)
 
     midi = None
     if args.pitch:
@@ -77,7 +75,8 @@ def main():
     trainer = Trainer(mcfg, tcfg, args.out)
     result = trainer.fit(audio[train_idx], audio[val_idx] if len(val_idx) else None,
                          pitch_train=None if midi is None else midi[train_idx],
-                         pitch_val=None if midi is None or not len(val_idx) else midi[val_idx])
+                         pitch_val=None if midi is None or not len(val_idx) else midi[val_idx],
+                         resume=args.resume)
     print(f"Done in {result['minutes']:.1f} min, best val recon {result['best_val_recon']:.4f}")
 
     if args.export:

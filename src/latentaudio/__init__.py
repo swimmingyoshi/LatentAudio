@@ -23,7 +23,7 @@ A neural audio synthesis system that provides direct exploration of the learned
 manifold of sounds through latent space manipulation.
 """
 
-__version__ = "1.0.0"
+__version__ = "2.0.0b1"
 __author__ = "LatentAudio Team"
 
 # Import main classes for convenience

@@ -536,7 +536,7 @@ def tensorboard(port, host, logdir):
 @cli.command()
 def info():
     """Show information about LatentAudio installation."""
-    click.echo("LatentAudio v1.0.0")
+    click.echo("LatentAudio v2.0.0b1")
     click.echo("Direct Neural Audio Generation and Exploration")
     click.echo("")
     click.echo("Core Features:")
