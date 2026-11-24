@@ -58,17 +58,19 @@ cd LatentAudio
     latentaudio train --help
     ```
 
-**Download Trained 128D Kicks Model: [here](https://huggingface.co/Meowmeow42/LatentAudio/tree/main)**
+**v2 model for the plugin:** [StringsModel_v2p](https://github.com/swimmingyoshi/LatentAudioVST/releases/tag/v2.0.0-beta) (strings, pitched)
+
+**Older v1 128D Kicks Model: [here](https://huggingface.co/Meowmeow42/LatentAudio/tree/main)**
 MOST OF THE MODEL WEIGHT IS OPTMIZERS AND TRAINING STATES YOU CAN PRUNE THIS DOWN TO ~1.3gb and even make it fp16 for even smaller model. SAVES ON VRAM AND MEMORY.
 
-FULL MODEL GPU AND CPU COMPARISON
+V1 FULL MODEL GPU AND CPU COMPARISON
 | Metric | GPU (CUDA) | CPU (Intel/AMD) |
 | :--- | :--- | :--- |
 | Latency | 5.23 ms | 132.06 ms |
 | RTF (Real-time Factor) | 191.4x | 7.6x |
 | Speed Description | Instantaneous | Extremely Fast |
 
-PRUNED RESULTS USING GPU
+V1 PRUNED RESULTS USING GPU
 | Metric | FP32 Pruned (1.3 GB) | FP16 Pruned (656 MB) |
 | :--- | :--- | :--- |
 | Inference Latency | 5.51 ms | 4.26 ms |
@@ -76,7 +78,46 @@ PRUNED RESULTS USING GPU
 | VRAM Usage | 1,321 MB | 667 MB |
 | Load Time | 17.45 s | 15.98 s |
 
+## What's New in 2.0.0-beta
+
+- **v2 models**: smaller, faster and closer to the source sounds (see below)
+- **Pitch-conditioned models** for melodic instruments (`--pitch`)
+- **Sky map export** for the VST: smooth field between sounds, brightness and length per sound
+- **Resumable training** (`--resume`), and early stops keep the right checkpoint
+- **Safer checkpoints**: v2 loading uses `weights_only=True`
+- **Dataset cache check**: rebuilt when the data or sound length changes
+- **`make_release_model.py`**: share a model without sample names
+
 ## ⚡ LatentAudio v2 (recommended)
+
+### Why use v2 models
+
+| | v1 | v2 |
+| :--- | :--- | :--- |
+| Decoder file | 1005 MB | **19 MB** |
+| Load time | 4.3 s | **0.2 s** |
+| Decode time (kicks, CPU) | 575 ms | **116 ms** |
+| Kicks: mel error, held-out sounds | 1.97 dB | **1.54 dB** |
+| Kicks: envelope error, held-out sounds | 1.81 dB | **1.01 dB** |
+| Synths: mel error, held-out sounds | 8.2 dB | **5.1 dB** |
+| Synths: loudness error, held-out sounds | 12.7 dB | **2.2 dB** |
+
+Lower is better. Measured with `scripts/compare_models.py` on the same sounds (held out from v2 training), matched in
+level; both use the same CPU runtime in Python. Decode inside the plugin was 280 ms (v1) and 57 ms (v2) for kicks.
+
+### Why train with v2
+
+- What you train is what you hear: no encoder-to-decoder skip connections, so training and generation use the same path
+- Every step trains on spectral, mel and energy-envelope losses
+- 10% of the sounds are held out by default, and the best checkpoint is chosen on them. Splits are per clip, so scores
+  can be optimistic when a dataset has many near-identical notes
+- The dataset stays on the GPU with bf16 and an EMA of the weights
+- The exported decoder is about 19 MB and runs directly in the plugin
+
+Known limits: high-frequency texture (attacks, dense harmonics) is softer than the source, and low-end rumble can appear.
+
+### How it works
+
 
 v2 is a rebuilt model aimed at the VST: a spectral VAE whose decoder runs at STFT
 frame rate (ConvNeXt blocks conditioned on the latent) and synthesises audio with an
@@ -89,6 +130,16 @@ and an EMA of the weights, and holds out 10% of the sounds to measure generalisa
 Train on a folder of one-shots and export a VST model folder in one go:
 ```bash
 python scripts/train_v2.py --data path/to/one_shots --out runs/my_model --export path/to/MyModelVST
+```
+Continue an interrupted run (same settings; `--epochs` may be raised), or train a pitched model:
+```bash
+python scripts/train_v2.py --data path/to/one_shots --out runs/my_model --resume
+python scripts/build_dataset.py --help   # --pitch writes the manifest.json that pitched training needs
+python scripts/train_v2.py --data path/to/pitched_dataset --out runs/my_pitched --pitch --seconds 2 --preset fast --export path/to/MyPitchedVST
+```
+Share a model without the names of the sounds it was trained on (check the samples' license first):
+```bash
+python scripts/make_release_model.py path/to/MyModelVST release/MyModelVST --name Kick
 ```
 Presets: `--preset base` (default), `fast` (smaller/faster decoder) or `transient`
 (finer time resolution). `--beta` trades detail (low) for a smoother map (high).
